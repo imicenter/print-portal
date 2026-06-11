@@ -17,7 +17,7 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
   const firebaseConfig = {
@@ -37,7 +37,11 @@
   window._storage = storage;
   window._fbFns = { collection, addDoc, serverTimestamp, ref, uploadBytes, getDownloadURL };
   window._fbFns2 = { collection, getDocs, query, where };
+  window._fbExtraFns = { doc, getDoc };
   window.dispatchEvent(new Event("firebase-ready"));
+  // Pricing Firebase se load karo
+  window.addEventListener('firebase-ready', () => loadPricingFromFirebase(), { once: true });
+  loadPricingFromFirebase();
 </script>
 
 <style>
@@ -660,7 +664,8 @@ footer a { color: #888; text-decoration: none; }
           </div>
           <div class="form-group">
             <label>PHONE NUMBER *</label>
-            <input type="tel" id="s_phone" placeholder="10 digit number" oninput="checkStep2()" maxlength="10" />
+            <input type="tel" id="s_phone" placeholder="10 digit number" oninput="checkStep2()" maxlength="10" inputmode="numeric" />
+            <span id="phoneHint" style="font-size:11px;margin-top:4px;display:block"></span>
           </div>
           <div class="form-group full">
             <label>GHAR KA ADDRESS *</label>
@@ -744,16 +749,22 @@ footer a { color: #888; text-decoration: none; }
       <div class="success-card">
         <div class="success-anim">✓</div>
         <h2>Order Placed! 🎉</h2>
-        <p class="order-id-big" id="suc_orderId"></p>
-        <p>Aapka order receive ho gaya hai.<br>Hum jald hi aapse contact karenge.</p>
+        <div style="background:#fff8f0;border:2px dashed #e8440a;border-radius:12px;padding:14px 20px;margin:12px 0 16px;text-align:center">
+          <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;letter-spacing:0.5px">AAPKA ORDER ID — SAVE KAR LO</div>
+          <div style="font-size:26px;font-weight:800;color:#e8440a;font-family:'Space Grotesk',sans-serif;letter-spacing:1px" id="suc_orderId"></div>
+          <div style="font-size:11px;color:#999;margin-top:4px">Is ID se order track kar sakte hain</div>
+        </div>
+        <p style="color:#666;font-size:13px;margin-bottom:14px">Aapka order receive ho gaya hai.<br>Hum jald hi print karke bhej denge.</p>
         <div class="success-details">
           <div class="srow"><span>Total Amount</span><span>₹<span id="suc_total"></span></span></div>
           <div class="srow"><span>Payment</span><span>Cash on Delivery</span></div>
           <div class="srow"><span>Expected Delivery</span><span id="suc_delivery"></span></div>
         </div>
-        <button class="wa-btn" id="waBtn" onclick="sendWhatsApp()">📲 WhatsApp pe Confirm Karo</button>
-        <p class="wa-sent hidden" id="waSent">✅ WhatsApp message open ho gaya!</p>
-        <button class="new-order-btn" onclick="resetApp()">+ New Order Dalna Hai</button>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+          <button class="wa-btn" id="waBtn" onclick="sendWhatsApp()">📲 WhatsApp pe Order Share Karo</button>
+          <a id="trackBtn" href="track.html" style="display:block;text-align:center;padding:12px;background:#f5f3ef;border:1.5px solid #e4e1db;border-radius:10px;color:#3a3a3a;font-weight:700;font-size:14px;text-decoration:none">📦 Order Track Karo</a>
+          <button class="new-order-btn" onclick="resetApp()">+ Naya Order Dena Hai</button>
+        </div>
       </div>
     </div>
 
@@ -768,11 +779,60 @@ footer a { color: #888; text-decoration: none; }
 
 <script>
 // ══════════════════════════════════════════
-//  PRICES — Change karo yahan
+//  PRICES — Firebase se aate hain (admin panel se manage karo)
 // ══════════════════════════════════════════
-const PRICES = { bw: { A4: 2, A3: 4, Letter: 2, Legal: 3 }, color: { A4: 10, A3: 18, Letter: 10, Legal: 14 } };
-const SHIPPING = { standard: 40, express: 80 };
-const BINDING = { none: 0, staple: 5, spiral: 30, hardcover: 80 };
+let PRICES   = { bw: { A4: 2, A3: 4, Letter: 2, Legal: 3 }, color: { A4: 10, A3: 18, Letter: 10, Legal: 14 } };
+let SHIPPING = { standard: 40, express: 80 };
+let SHIPPING_DAYS = { standard: '3-5 din', express: '1-2 din' };
+let BINDING  = { none: 0, staple: 5, spiral: 30, hardcover: 80 };
+
+async function loadPricingFromFirebase() {
+  if (!window._db) return;
+  try {
+    const { doc, getDoc } = window._fbExtraFns;
+    const snap = await getDoc(doc(window._db, 'settings', 'pricing'));
+    if (!snap.exists()) return;
+    const d = snap.data();
+    if (d.bw)       PRICES.bw      = d.bw;
+    if (d.color)    PRICES.color   = d.color;
+    if (d.shipping) {
+      SHIPPING.standard    = d.shipping.standard    || SHIPPING.standard;
+      SHIPPING.express     = d.shipping.express     || SHIPPING.express;
+      SHIPPING_DAYS.standard = d.shipping.standardDays || SHIPPING_DAYS.standard;
+      SHIPPING_DAYS.express  = d.shipping.expressDays  || SHIPPING_DAYS.express;
+    }
+    if (d.binding) {
+      BINDING.staple    = d.binding.staple    ?? BINDING.staple;
+      BINDING.spiral    = d.binding.spiral    ?? BINDING.spiral;
+      BINDING.hardcover = d.binding.hardcover ?? BINDING.hardcover;
+    }
+    // UI update karo
+    updatePriceButtons();
+    updateShippingUI();
+    updatePricePreview();
+  } catch(e) { console.warn('Pricing load error:', e); }
+}
+
+function updatePriceButtons() {
+  // Print type buttons
+  const bwBtn  = document.querySelector('[data-group="printType"][data-val="bw"]');
+  const colBtn = document.querySelector('[data-group="printType"][data-val="color"]');
+  if (bwBtn)  bwBtn.textContent  = '⬛ Black & White — ₹' + PRICES.bw.A4 + '/page';
+  if (colBtn) colBtn.textContent = '🌈 Colour — ₹' + PRICES.color.A4 + '/page';
+  // Binding buttons
+  const bindings = { staple: '📌 Staple', spiral: '🔘 Spiral', hardcover: '📚 Hardcover' };
+  Object.entries(bindings).forEach(([key, label]) => {
+    const btn = document.querySelector('[data-group="binding"][data-val="' + key + '"]');
+    if (btn) btn.textContent = label + ' +₹' + BINDING[key];
+  });
+}
+
+function updateShippingUI() {
+  const stdEl = document.getElementById('shipStandard');
+  const expEl = document.getElementById('shipExpress');
+  if (stdEl) stdEl.innerHTML = `<strong>Standard</strong><span>${SHIPPING_DAYS.standard}</span><span class="ship-price">₹${SHIPPING.standard}</span>`;
+  if (expEl) expEl.innerHTML = `<strong>⚡ Express</strong><span>${SHIPPING_DAYS.express}</span><span class="ship-price">₹${SHIPPING.express}</span>`;
+}
 
 // COUPONS ab Firebase se aate hain — admin panel se manage karo
 
@@ -893,7 +953,20 @@ function selectShipping(type) {
   document.getElementById('shipExpress').classList.toggle('sel', type === 'express');
 }
 function checkStep2() {
-  const ok = ['s_name','s_phone','s_address','s_city','s_pincode'].every(id => document.getElementById(id).value.trim() !== '');
+  const phone = document.getElementById('s_phone').value.trim();
+  const phoneValid = /^\d{10}$/.test(phone);
+  const phoneEl = document.getElementById('s_phone');
+  const phoneHint = document.getElementById('phoneHint');
+
+  if (phone.length > 0 && !phoneValid) {
+    phoneEl.style.borderColor = '#ef4444';
+    if (phoneHint) { phoneHint.textContent = '❌ 10 digit ka mobile number daalo'; phoneHint.style.color = '#ef4444'; }
+  } else {
+    phoneEl.style.borderColor = '';
+    if (phoneHint) { phoneHint.textContent = ''; }
+  }
+
+  const ok = ['s_name','s_address','s_city','s_pincode'].every(id => document.getElementById(id).value.trim() !== '') && phoneValid;
   document.getElementById('btn2next').disabled = !ok;
 }
 
@@ -1080,7 +1153,10 @@ async function placeOrder() {
   document.getElementById('successPage').classList.remove('hidden');
   document.getElementById('suc_orderId').textContent = '#' + state.orderId;
   document.getElementById('suc_total').textContent = total;
-  document.getElementById('suc_delivery').textContent = state.options.shipping === 'standard' ? '3–5 din' : '1–2 din';
+  const deliveryDays = state.options.shipping === 'standard' ? SHIPPING_DAYS.standard : SHIPPING_DAYS.express;
+  document.getElementById('suc_delivery').textContent = deliveryDays;
+  // Track button mein order ID add karo
+  document.getElementById('trackBtn').href = 'track.html?order=' + state.orderId;
   window.scrollTo(0, 0);
 }
 
@@ -1088,19 +1164,22 @@ async function placeOrder() {
 function sendWhatsApp() {
   const { total, discount } = calcPrice();
   const sh = state.shipping;
-  const msg = `🖨️ *New Print Order — ${state.orderId}*\n\n` +
-    `👤 *Customer:* ${sh.name}\n📞 *Phone:* ${sh.phone}\n` +
+  const deliveryDays = state.options.shipping === 'standard' ? SHIPPING_DAYS.standard : SHIPPING_DAYS.express;
+  const msg =
+    `🖨️ *PrintKaro — Order Confirmed!*\n\n` +
+    `📋 *Order ID:* #${state.orderId}\n` +
+    `👤 *Naam:* ${sh.name}\n` +
     `📍 *Address:* ${sh.address}, ${sh.city}, ${sh.state} — ${sh.pincode}\n\n` +
-    `🖨️ *Print Details:*\n• Type: ${state.options.printType === 'bw' ? 'Black & White' : 'Colour'}\n` +
-    `• Paper: ${state.options.paperSize}\n• Pages: ${state.pageCount}\n• Copies: ${state.options.copies}\n` +
-    `• Sides: ${state.options.sides === 'single' ? 'Single Side' : 'Double Side'}\n` +
-    `• Binding: ${state.options.binding}\n• Delivery: ${state.options.shipping}\n\n` +
+    `🖨️ *Print Details:*\n` +
+    `• ${state.options.printType === 'bw' ? 'Black & White' : 'Colour'} • ${state.options.paperSize}\n` +
+    `• ${state.pageCount} pages × ${state.options.copies} copies\n` +
+    `• ${state.options.sides === 'single' ? 'Single Side' : 'Double Side'} • ${state.options.binding !== 'none' ? state.options.binding + ' binding' : 'No binding'}\n` +
+    `• Delivery: ${state.options.shipping === 'standard' ? 'Standard' : 'Express'} (${deliveryDays})\n\n` +
     (discount > 0 ? `🎟️ *Coupon:* ${state.coupon} (−₹${discount})\n` : '') +
-    `💰 *Total:* ₹${total} (Cash on Delivery)\n\n` +
-    `📁 *File:* ${state.file?.name}`;
+    `💰 *Total:* ₹${total} *(Cash on Delivery)*\n\n` +
+    `📁 *File:* ${state.file?.name}\n\n` +
+    `🔍 Track karo: printkaro.in/track.html?order=${state.orderId}`;
   window.open(`https://wa.me/918542843598?text=${encodeURIComponent(msg)}`, '_blank');
-  document.getElementById('waBtn').classList.add('hidden');
-  document.getElementById('waSent').classList.remove('hidden');
 }
 
 // ── Reset ──
@@ -1124,8 +1203,6 @@ function resetApp() {
   document.getElementById('fileInput').value = '';
   document.getElementById('couponInput').value = '';
   document.getElementById('couponMsg').style.display = 'none';
-  document.getElementById('waBtn').classList.remove('hidden');
-  document.getElementById('waSent').classList.add('hidden');
   updateStepsBar();
   updatePricePreview();
   window.scrollTo(0, 0);

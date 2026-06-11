@@ -10,7 +10,7 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp }
+  import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp, getDoc, setDoc }
     from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -26,7 +26,7 @@
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   const db = getFirestore(app);
   window._db = db;
-  window._fbFns = { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp };
+  window._fbFns = { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp, getDoc, setDoc };
   window.dispatchEvent(new Event("firebase-ready"));
 </script>
 
@@ -255,6 +255,7 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--surface);
 .btn-done      { border-color: var(--done);      color: var(--done);      background: var(--done-bg); }
 .btn-cancel    { border-color: var(--cancelled); color: var(--cancelled); background: var(--cancelled-bg); }
 .btn-wa        { border-color: #22c55e; color: #22c55e; background: #f0fdf4; }
+.btn-file      { border-color: #0ea5e9; color: #0ea5e9; background: #f0f9ff; text-decoration: none; display: inline-flex; align-items: center; }
 
 /* Coupon Manager */
 .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -415,6 +416,9 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--surface);
       <div class="nav-item" onclick="showPage('coupons')" id="nav-coupons">
         <span class="nav-icon">🎟️</span> Coupons
       </div>
+      <div class="nav-item" onclick="showPage('pricing')" id="nav-pricing">
+        <span class="nav-icon">💰</span> Pricing
+      </div>
       <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
         <span class="nav-icon">⚙️</span> Settings
       </div>
@@ -501,6 +505,52 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--surface);
       <div class="coupon-grid" id="couponGrid">
         <div class="loading-state">⏳ Coupons load ho rahe hain...</div>
       </div>
+    </div>
+
+    <!-- ── Pricing Page ── -->
+    <div id="page-pricing" class="page-body hidden">
+      <div class="section-header" style="margin-bottom:20px">
+        <span class="section-title">💰 Pricing Manager</span>
+        <button class="add-btn" onclick="savePricing()">💾 Save Karo</button>
+      </div>
+
+      <!-- Print Rates -->
+      <div class="settings-card" style="max-width:100%;margin-bottom:14px">
+        <div class="section-title" style="font-size:15px;margin-bottom:16px">🖨️ Print Rates (₹ per page)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+          <div class="mf-group"><label>B&W — A4</label><input type="number" id="p_bw_a4" min="1" placeholder="2" /></div>
+          <div class="mf-group"><label>B&W — A3</label><input type="number" id="p_bw_a3" min="1" placeholder="4" /></div>
+          <div class="mf-group"><label>B&W — Letter</label><input type="number" id="p_bw_letter" min="1" placeholder="2" /></div>
+          <div class="mf-group"><label>B&W — Legal</label><input type="number" id="p_bw_legal" min="1" placeholder="3" /></div>
+          <div class="mf-group"><label>Colour — A4</label><input type="number" id="p_col_a4" min="1" placeholder="10" /></div>
+          <div class="mf-group"><label>Colour — A3</label><input type="number" id="p_col_a3" min="1" placeholder="18" /></div>
+          <div class="mf-group"><label>Colour — Letter</label><input type="number" id="p_col_letter" min="1" placeholder="10" /></div>
+          <div class="mf-group"><label>Colour — Legal</label><input type="number" id="p_col_legal" min="1" placeholder="14" /></div>
+        </div>
+      </div>
+
+      <!-- Shipping Rates -->
+      <div class="settings-card" style="max-width:100%;margin-bottom:14px">
+        <div class="section-title" style="font-size:15px;margin-bottom:16px">🚚 Delivery Rates & Timing</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+          <div class="mf-group"><label>Standard — Price (₹)</label><input type="number" id="p_ship_std" min="0" placeholder="40" /></div>
+          <div class="mf-group"><label>Standard — Days (e.g. 3-5 din)</label><input type="text" id="p_ship_std_days" placeholder="3-5 din" /></div>
+          <div class="mf-group"><label>Express — Price (₹)</label><input type="number" id="p_ship_exp" min="0" placeholder="80" /></div>
+          <div class="mf-group"><label>Express — Days (e.g. 1-2 din)</label><input type="text" id="p_ship_exp_days" placeholder="1-2 din" /></div>
+        </div>
+      </div>
+
+      <!-- Binding Rates -->
+      <div class="settings-card" style="max-width:100%;margin-bottom:14px">
+        <div class="section-title" style="font-size:15px;margin-bottom:16px">📦 Binding Rates (₹ per copy)</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+          <div class="mf-group"><label>📌 Staple (₹)</label><input type="number" id="p_bind_staple" min="0" placeholder="5" /></div>
+          <div class="mf-group"><label>🔘 Spiral (₹)</label><input type="number" id="p_bind_spiral" min="0" placeholder="30" /></div>
+          <div class="mf-group"><label>📚 Hardcover (₹)</label><input type="number" id="p_bind_hardcover" min="0" placeholder="80" /></div>
+        </div>
+      </div>
+
+      <button class="add-btn" style="width:100%;padding:14px;font-size:15px" onclick="savePricing()">💾 Sab Save Karo</button>
     </div>
 
     <!-- ── Settings Page ── -->
@@ -724,6 +774,7 @@ function renderOrderCard(o) {
       ${o.status !== 'done'      && o.status !== 'cancelled' ? `<button class="act-btn btn-done"     onclick="updateStatus('${o.id}','done')">✅ Delivered</button>` : ''}
       ${o.status !== 'cancelled' ? `<button class="act-btn btn-cancel" onclick="updateStatus('${o.id}','cancelled')">❌ Cancel</button>` : ''}
       <button class="act-btn btn-wa" onclick="waContact('${o.id}')">📲 WhatsApp</button>
+      ${o.fileURL ? `<a class="act-btn btn-file" href="${o.fileURL}" target="_blank" download>📥 File Download</a>` : '<span class="act-btn btn-nofile" style="opacity:0.4;cursor:not-allowed">📁 No File</span>'}
     </div>
   </div>`;
 }
@@ -832,13 +883,14 @@ async function deleteCoupon(id, code) {
 
 // ── Page switching ──
 function showPage(page) {
-  ['orders','coupons','settings'].forEach(p => {
+  ['orders','coupons','pricing','settings'].forEach(p => {
     document.getElementById('page-' + p).classList.toggle('hidden', p !== page);
     document.getElementById('nav-' + p).classList.toggle('active', p === page);
   });
-  const titles = { orders: 'Orders Dashboard', coupons: 'Coupon Manager', settings: 'Settings' };
+  const titles = { orders: 'Orders Dashboard', coupons: 'Coupon Manager', pricing: 'Pricing Manager', settings: 'Settings' };
   document.getElementById('pageTitle').textContent = titles[page];
   if (page === 'coupons') loadCoupons();
+  if (page === 'pricing') loadPricing();
 }
 
 // ── Notifications ──
@@ -887,6 +939,80 @@ function changePassword() {
   document.getElementById('oldPass').value = '';
   document.getElementById('newPass').value = '';
   document.getElementById('newPass2').value = '';
+}
+
+// ══════════════════════════════════════════
+//  PRICING MANAGER
+// ══════════════════════════════════════════
+const DEFAULT_PRICING = {
+  bw:      { A4: 2, A3: 4, Letter: 2, Legal: 3 },
+  color:   { A4: 10, A3: 18, Letter: 10, Legal: 14 },
+  shipping: { standard: 40, standardDays: '3-5 din', express: 80, expressDays: '1-2 din' },
+  binding:  { staple: 5, spiral: 30, hardcover: 80 },
+};
+
+async function loadPricing() {
+  if (!window._db) { window.addEventListener('firebase-ready', loadPricing, { once: true }); return; }
+  try {
+    const { doc, getDoc } = window._fbFns;
+    const snap = await getDoc(doc(window._db, 'settings', 'pricing'));
+    const data = snap.exists() ? snap.data() : DEFAULT_PRICING;
+    // Fill fields
+    document.getElementById('p_bw_a4').value        = data.bw?.A4 ?? DEFAULT_PRICING.bw.A4;
+    document.getElementById('p_bw_a3').value        = data.bw?.A3 ?? DEFAULT_PRICING.bw.A3;
+    document.getElementById('p_bw_letter').value    = data.bw?.Letter ?? DEFAULT_PRICING.bw.Letter;
+    document.getElementById('p_bw_legal').value     = data.bw?.Legal ?? DEFAULT_PRICING.bw.Legal;
+    document.getElementById('p_col_a4').value       = data.color?.A4 ?? DEFAULT_PRICING.color.A4;
+    document.getElementById('p_col_a3').value       = data.color?.A3 ?? DEFAULT_PRICING.color.A3;
+    document.getElementById('p_col_letter').value   = data.color?.Letter ?? DEFAULT_PRICING.color.Letter;
+    document.getElementById('p_col_legal').value    = data.color?.Legal ?? DEFAULT_PRICING.color.Legal;
+    document.getElementById('p_ship_std').value     = data.shipping?.standard ?? DEFAULT_PRICING.shipping.standard;
+    document.getElementById('p_ship_std_days').value= data.shipping?.standardDays ?? DEFAULT_PRICING.shipping.standardDays;
+    document.getElementById('p_ship_exp').value     = data.shipping?.express ?? DEFAULT_PRICING.shipping.express;
+    document.getElementById('p_ship_exp_days').value= data.shipping?.expressDays ?? DEFAULT_PRICING.shipping.expressDays;
+    document.getElementById('p_bind_staple').value  = data.binding?.staple ?? DEFAULT_PRICING.binding.staple;
+    document.getElementById('p_bind_spiral').value  = data.binding?.spiral ?? DEFAULT_PRICING.binding.spiral;
+    document.getElementById('p_bind_hardcover').value = data.binding?.hardcover ?? DEFAULT_PRICING.binding.hardcover;
+  } catch(e) {
+    showToast('Pricing load error: ' + e.message, 'error');
+  }
+}
+
+async function savePricing() {
+  if (!window._db) return;
+  const pricing = {
+    bw: {
+      A4:     parseFloat(document.getElementById('p_bw_a4').value) || DEFAULT_PRICING.bw.A4,
+      A3:     parseFloat(document.getElementById('p_bw_a3').value) || DEFAULT_PRICING.bw.A3,
+      Letter: parseFloat(document.getElementById('p_bw_letter').value) || DEFAULT_PRICING.bw.Letter,
+      Legal:  parseFloat(document.getElementById('p_bw_legal').value) || DEFAULT_PRICING.bw.Legal,
+    },
+    color: {
+      A4:     parseFloat(document.getElementById('p_col_a4').value) || DEFAULT_PRICING.color.A4,
+      A3:     parseFloat(document.getElementById('p_col_a3').value) || DEFAULT_PRICING.color.A3,
+      Letter: parseFloat(document.getElementById('p_col_letter').value) || DEFAULT_PRICING.color.Letter,
+      Legal:  parseFloat(document.getElementById('p_col_legal').value) || DEFAULT_PRICING.color.Legal,
+    },
+    shipping: {
+      standard:     parseFloat(document.getElementById('p_ship_std').value) || DEFAULT_PRICING.shipping.standard,
+      standardDays: document.getElementById('p_ship_std_days').value.trim() || DEFAULT_PRICING.shipping.standardDays,
+      express:      parseFloat(document.getElementById('p_ship_exp').value) || DEFAULT_PRICING.shipping.express,
+      expressDays:  document.getElementById('p_ship_exp_days').value.trim() || DEFAULT_PRICING.shipping.expressDays,
+    },
+    binding: {
+      staple:    parseFloat(document.getElementById('p_bind_staple').value) || DEFAULT_PRICING.binding.staple,
+      spiral:    parseFloat(document.getElementById('p_bind_spiral').value) || DEFAULT_PRICING.binding.spiral,
+      hardcover: parseFloat(document.getElementById('p_bind_hardcover').value) || DEFAULT_PRICING.binding.hardcover,
+    },
+    updatedAt: window._fbFns.serverTimestamp(),
+  };
+  try {
+    const { doc, setDoc } = window._fbFns;
+    await setDoc(doc(window._db, 'settings', 'pricing'), pricing);
+    showToast('✅ Pricing save ho gayi!', 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
 }
 
 // ── Toast ──
