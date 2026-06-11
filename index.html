@@ -17,7 +17,8 @@
 <!-- Firebase -->
 <script type="module">
   import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAz5d2x3pTtge7w-ry8Jm__1bV0pAbK6q0",
@@ -31,8 +32,11 @@
 
   const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
   const db = getFirestore(app);
+  const storage = getStorage(app);
   window._db = db;
-  window._fbFns = { collection, addDoc, serverTimestamp };
+  window._storage = storage;
+  window._fbFns = { collection, addDoc, serverTimestamp, ref, uploadBytes, getDownloadURL };
+  window._fbFns2 = { collection, getDocs, query, where };
   window.dispatchEvent(new Event("firebase-ready"));
 </script>
 
@@ -90,6 +94,15 @@ body {
 .logo-sub { font-size: 10px; color: #888; display: block; margin-top: 1px; }
 .header-right { display: flex; align-items: center; gap: 8px; }
 .badge-cod { background: #1a3a22; color: #4ade80; padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+.track-btn {
+  background: rgba(255,255,255,0.1); color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 6px 13px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+  text-decoration: none; transition: all 0.15s;
+  letter-spacing: 0.2px;
+}
+.track-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.35); }
 
 /* ── Hero ── */
 .hero {
@@ -472,6 +485,7 @@ footer a { color: #888; text-decoration: none; }
       </div>
     </div>
     <div class="header-right">
+      <a href="track.html" class="track-btn">📦 Track Order</a>
       <span class="badge-cod">✓ COD Available</span>
     </div>
   </header>
@@ -760,15 +774,7 @@ const PRICES = { bw: { A4: 2, A3: 4, Letter: 2, Legal: 3 }, color: { A4: 10, A3:
 const SHIPPING = { standard: 40, express: 80 };
 const BINDING = { none: 0, staple: 5, spiral: 30, hardcover: 80 };
 
-// ══════════════════════════════════════════
-//  COUPON CODES — Yahan manage karo
-//  Format: 'CODE': { type: 'percent'|'flat', value: number, minOrder: number }
-// ══════════════════════════════════════════
-const COUPONS = {
-  'PRINT10': { type: 'percent', value: 10, minOrder: 0, desc: '10% Off' },
-  'FLAT20':  { type: 'flat',    value: 20, minOrder: 100, desc: '₹20 Off (min order ₹100)' },
-  'VIKAS50': { type: 'flat',    value: 50, minOrder: 200, desc: '₹50 Off (min order ₹200)' },
-};
+// COUPONS ab Firebase se aate hain — admin panel se manage karo
 
 let state = {
   step: 0, file: null, pageCount: 1,
@@ -777,6 +783,7 @@ let state = {
   orderId: 'PK' + Date.now().toString().slice(-6),
   saving: false,
   coupon: null,
+  couponData: null,
 };
 
 // ── Calc ──
@@ -788,9 +795,9 @@ function calcPrice() {
   const bindingCost = BINDING[state.options.binding] * state.options.copies;
   const subtotal = printCost + shippingCost + bindingCost;
   let discount = 0;
-  if (state.coupon) {
-    const c = COUPONS[state.coupon];
-    if (subtotal >= c.minOrder) {
+  if (state.coupon && state.couponData) {
+    const c = state.couponData;
+    if (subtotal >= (c.minOrder || 0)) {
       discount = c.type === 'percent' ? Math.round(subtotal * c.value / 100) : c.value;
     }
   }
@@ -891,22 +898,63 @@ function checkStep2() {
 }
 
 // ── Coupon ──
-function applyCoupon() {
+async function applyCoupon() {
   const code = document.getElementById('couponInput').value.trim().toUpperCase();
   const msgEl = document.getElementById('couponMsg');
+  const btn = document.querySelector('.coupon-btn');
   msgEl.style.display = 'block';
+
   if (!code) { msgEl.textContent = 'Code likhein pehle'; msgEl.className = 'coupon-msg error'; return; }
-  const coupon = COUPONS[code];
-  if (!coupon) { msgEl.textContent = '❌ Galat code hai'; msgEl.className = 'coupon-msg error'; state.coupon = null; populateReview(); return; }
-  const { subtotal } = calcPrice();
-  state.coupon = null;
-  const tempSubtotal = subtotal;
-  if (tempSubtotal < coupon.minOrder) {
-    msgEl.textContent = '❌ Min order ₹' + coupon.minOrder + ' chahiye'; msgEl.className = 'coupon-msg error'; return;
+
+  // Loading state
+  btn.textContent = '⏳...'; btn.disabled = true;
+  state.coupon = null; state.couponData = null;
+
+  try {
+    const { collection, getDocs, query, where } = window._fbFns2;
+    const q = query(collection(window._db, 'coupons'), where('code', '==', code));
+    const snap = await getDocs(q);
+
+    btn.textContent = 'Apply'; btn.disabled = false;
+
+    if (snap.empty) {
+      msgEl.textContent = '❌ Galat code hai'; msgEl.className = 'coupon-msg error';
+      populateReview(); return;
+    }
+
+    const coupon = snap.docs[0].data();
+
+    // Expiry check
+    if (coupon.expiry && new Date(coupon.expiry) < new Date()) {
+      msgEl.textContent = '❌ Coupon expire ho gaya'; msgEl.className = 'coupon-msg error';
+      populateReview(); return;
+    }
+
+    // Max uses check
+    if (coupon.maxUses && coupon.maxUses > 0 && (coupon.usedCount || 0) >= coupon.maxUses) {
+      msgEl.textContent = '❌ Coupon limit khatam ho gayi'; msgEl.className = 'coupon-msg error';
+      populateReview(); return;
+    }
+
+    // Min order check
+    const { subtotal } = calcPrice();
+    if (subtotal < (coupon.minOrder || 0)) {
+      msgEl.textContent = '❌ Min order ₹' + coupon.minOrder + ' chahiye'; msgEl.className = 'coupon-msg error';
+      populateReview(); return;
+    }
+
+    // Valid!
+    state.coupon = code;
+    state.couponData = coupon;
+    const desc = coupon.type === 'percent' ? coupon.value + '% Off' : '₹' + coupon.value + ' Off';
+    msgEl.textContent = '✅ ' + desc + ' apply hua!'; msgEl.className = 'coupon-msg success';
+    populateReview();
+
+  } catch(e) {
+    btn.textContent = 'Apply'; btn.disabled = false;
+    msgEl.textContent = '❌ Error aaya, dobara try karo'; msgEl.className = 'coupon-msg error';
+    console.error('Coupon check error:', e);
   }
-  state.coupon = code;
-  msgEl.textContent = '✅ ' + coupon.desc + ' apply hua!'; msgEl.className = 'coupon-msg success';
-  populateReview();
 }
 
 // ── Review ──
@@ -945,16 +993,38 @@ async function placeOrder() {
   state.saving = true;
   const btn = document.getElementById('btnSubmit');
   btn.disabled = true;
-  btn.textContent = '⏳ Order save ho raha hai...';
 
   const { printCost, shippingCost, bindingCost, discount, total } = calcPrice();
 
+  // ── Step 1: File upload karo Firebase Storage mein ──
+  let fileURL = null;
+  if (state.file && window._storage) {
+    try {
+      btn.textContent = '📤 File upload ho rahi hai...';
+      const { ref, uploadBytes, getDownloadURL } = window._fbFns;
+      const filePath = 'printFiles/' + state.orderId + '_' + state.file.name;
+      const storageRef = ref(window._storage, filePath);
+      const snapshot = await uploadBytes(storageRef, state.file);
+      fileURL = await getDownloadURL(snapshot.ref);
+    } catch(e) {
+      console.error('File upload error:', e);
+      btn.disabled = false;
+      btn.textContent = '✅ Order Place Karo';
+      state.saving = false;
+      alert('File upload nahi hui! Internet check karo aur dobara try karo.');
+      return;
+    }
+  }
+
+  // ── Step 2: Order Firestore mein save karo ──
+  btn.textContent = '⏳ Order save ho raha hai...';
   if (window._db) {
     try {
       const { collection, addDoc, serverTimestamp } = window._fbFns;
       await addDoc(collection(window._db, 'printOrders'), {
         orderId: state.orderId,
         fileName: state.file?.name,
+        fileURL: fileURL,
         pageCount: state.pageCount,
         options: state.options,
         shipping: state.shipping,
@@ -1040,7 +1110,7 @@ function resetApp() {
     options: { printType: 'bw', paperSize: 'A4', copies: 1, sides: 'single', binding: 'none', shipping: 'standard' },
     shipping: { name: '', phone: '', address: '', city: '', state: 'Uttar Pradesh', pincode: '' },
     orderId: 'PK' + Date.now().toString().slice(-6),
-    saving: false, coupon: null,
+    saving: false, coupon: null, couponData: null,
   };
   document.getElementById('successPage').classList.add('hidden');
   document.getElementById('step0').classList.remove('hidden');

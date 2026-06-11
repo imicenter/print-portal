@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Track Your Order – PrintKaro</title>
+<meta name="description" content="Apna PrintKaro order track karo — Order ID ya Mobile Number se" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAz5d2x3pTtge7w-ry8Jm__1bV0pAbK6q0",
+    authDomain: "print-portal-77974.firebaseapp.com",
+    projectId: "print-portal-77974",
+    storageBucket: "print-portal-77974.firebasestorage.app",
+    messagingSenderId: "445425067214",
+    appId: "1:445425067214:web:d2b2e0d5b9eac4d08e9c9f"
+  };
+
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  const db = getFirestore(app);
+  window._db = db;
+  window._fbFns = { collection, query, where, getDocs, orderBy };
+  window.dispatchEvent(new Event("firebase-ready"));
+</script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f0f0f;
+  --ink2: #3a3a3a;
+  --ink3: #777;
+  --surface: #f5f3ef;
+  --white: #ffffff;
+  --accent: #e8440a;
+  --accent-light: #fff1ec;
+  --accent-hover: #c73808;
+  --green: #1a7a3f;
+  --green-light: #edf7f1;
+  --border: #e4e1db;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --radius: 14px;
+  --radius-sm: 9px;
+
+  --pending: #f59e0b;
+  --pending-bg: #fffbeb;
+  --printing: #3b82f6;
+  --printing-bg: #eff6ff;
+  --shipped: #8b5cf6;
+  --shipped-bg: #f5f3ff;
+  --done: #10b981;
+  --done-bg: #ecfdf5;
+  --cancelled: #ef4444;
+  --cancelled-bg: #fef2f2;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.header {
+  background: var(--ink); color: white;
+  padding: 13px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid #222;
+}
+.logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+.logo-icon {
+  width: 38px; height: 38px; background: var(--accent);
+  border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; font-size: 18px; flex-shrink: 0;
+}
+.logo-text { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; color: white; letter-spacing: -0.3px; }
+.logo-sub { font-size: 10px; color: #888; display: block; margin-top: 1px; }
+.order-btn {
+  background: var(--accent); color: white;
+  padding: 8px 16px; border-radius: 20px;
+  font-size: 12px; font-weight: 700;
+  text-decoration: none; transition: all 0.15s;
+}
+.order-btn:hover { background: var(--accent-hover); }
+
+/* Hero */
+.hero {
+  background: var(--ink); color: white;
+  padding: 36px 20px 28px; text-align: center;
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(232,68,10,0.15); color: #ff7043;
+  border: 1px solid rgba(232,68,10,0.25);
+  padding: 5px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; margin-bottom: 14px;
+}
+.hero h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 26px; font-weight: 700;
+  line-height: 1.2; margin-bottom: 8px; letter-spacing: -0.5px;
+}
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: #999; font-size: 13px; }
+
+/* Search Box */
+.search-wrap {
+  max-width: 520px; margin: 0 auto;
+  padding: 0 14px;
+  transform: translateY(-28px);
+}
+.search-card {
+  background: white; border-radius: var(--radius);
+  padding: 24px 22px; box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+}
+.search-card h3 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px; font-weight: 700; margin-bottom: 16px;
+  letter-spacing: -0.2px;
+}
+.tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab-btn {
+  flex: 1; padding: 9px; border: 1.5px solid var(--border);
+  border-radius: 9px; background: white; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 600; color: var(--ink3);
+  transition: all 0.15s; text-align: center;
+}
+.tab-btn.active {
+  border-color: var(--accent); background: var(--accent-light);
+  color: var(--accent);
+}
+.input-row { display: flex; gap: 8px; }
+.track-input {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px; outline: none; transition: border 0.15s;
+  color: var(--ink); letter-spacing: 0.5px;
+}
+.track-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,68,10,0.08); }
+.search-btn {
+  padding: 12px 22px; background: var(--accent); color: white;
+  border: none; border-radius: 10px; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px; font-weight: 700; transition: all 0.15s;
+  white-space: nowrap;
+}
+.search-btn:hover { background: var(--accent-hover); }
+.search-btn:disabled { background: #ccc; cursor: not-allowed; }
+.input-hint { font-size: 11.5px; color: var(--ink3); margin-top: 8px; }
+
+/* Results */
+.results-wrap {
+  max-width: 520px; margin: 0 auto 40px;
+  padding: 0 14px;
+  margin-top: -14px;
+}
+
+/* Order Result Card */
+.result-card {
+  background: white; border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  margin-bottom: 14px; overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+.rc-header {
+  padding: 16px 18px; border-bottom: 1px solid #f5f5f5;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+}
+.rc-order-id {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 17px; font-weight: 700; color: var(--accent);
+}
+.rc-time { font-size: 11.5px; color: var(--ink3); }
+
+.status-badge {
+  padding: 5px 13px; border-radius: 20px;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.3px;
+}
+.status-pending   { background: var(--pending-bg);   color: var(--pending); }
+.status-printing  { background: var(--printing-bg);  color: var(--printing); }
+.status-shipped   { background: var(--shipped-bg);   color: var(--shipped); }
+.status-done      { background: var(--done-bg);      color: var(--done); }
+.status-cancelled { background: var(--cancelled-bg); color: var(--cancelled); }
+
+/* Timeline */
+.timeline {
+  padding: 20px 18px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.tl-title {
+  font-size: 10.5px; font-weight: 700; color: #bbb;
+  text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 16px;
+}
+.tl-steps { display: flex; align-items: flex-start; gap: 0; }
+.tl-step {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  position: relative;
+}
+.tl-step:not(:last-child)::after {
+  content: '';
+  position: absolute; top: 14px; left: 50%;
+  width: 100%; height: 2px;
+  background: #eee; z-index: 0;
+}
+.tl-step.done:not(:last-child)::after { background: var(--green); }
+.tl-step.active:not(:last-child)::after { background: #eee; }
+
+.tl-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #eee; border: 2px solid #ddd;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; z-index: 1; position: relative;
+  transition: all 0.3s;
+}
+.tl-step.done .tl-dot { background: var(--green); border-color: var(--green); }
+.tl-step.active .tl-dot { background: var(--accent); border-color: var(--accent); animation: pulse 1.5s infinite; }
+.tl-step.cancelled .tl-dot { background: #ef4444; border-color: #ef4444; }
+
+@keyframes pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(232,68,10,0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(232,68,10,0); }
+}
+
+.tl-label {
+  font-size: 10px; font-weight: 700; margin-top: 7px;
+  text-align: center; color: var(--ink3); line-height: 1.3;
+}
+.tl-step.done .tl-label { color: var(--green); }
+.tl-step.active .tl-label { color: var(--accent); }
+.tl-step.cancelled .tl-label { color: #ef4444; }
+
+/* Order Details */
+.rc-details {
+  padding: 16px 18px; display: grid;
+  grid-template-columns: 1fr 1fr; gap: 14px;
+  border-bottom: 1px solid #f5f5f5;
+}
+.rd-group { display: flex; flex-direction: column; gap: 3px; }
+.rd-label { font-size: 10px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.6px; }
+.rd-val { font-size: 13px; color: var(--ink); line-height: 1.5; }
+.rd-val strong { font-weight: 700; }
+
+/* Status message */
+.status-msg {
+  padding: 14px 18px;
+  font-size: 13px; font-weight: 600; line-height: 1.5;
+}
+.status-msg.pending   { background: var(--pending-bg);   color: #92400e; border-left: 3px solid var(--pending); }
+.status-msg.printing  { background: var(--printing-bg);  color: #1e3a8a; border-left: 3px solid var(--printing); }
+.status-msg.shipped   { background: var(--shipped-bg);   color: #4c1d95; border-left: 3px solid var(--shipped); }
+.status-msg.done      { background: var(--done-bg);      color: #064e3b; border-left: 3px solid var(--done); }
+.status-msg.cancelled { background: var(--cancelled-bg); color: #7f1d1d; border-left: 3px solid var(--cancelled); }
+
+/* Empty / Error states */
+.state-box {
+  text-align: center; padding: 48px 20px;
+  background: white; border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+}
+.state-icon { font-size: 48px; margin-bottom: 14px; }
+.state-title { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.state-sub { color: var(--ink3); font-size: 13.5px; line-height: 1.6; }
+
+/* Help */
+.help-card {
+  background: var(--ink); color: white;
+  border-radius: var(--radius); padding: 18px 20px;
+  margin-top: 6px; display: flex; align-items: center;
+  justify-content: space-between; gap: 14px;
+  flex-wrap: wrap;
+}
+.help-card p { font-size: 13px; color: #bbb; }
+.help-card strong { display: block; font-size: 15px; color: white; margin-bottom: 4px; }
+.wa-help-btn {
+  padding: 10px 18px; background: #22c55e; color: white;
+  border: none; border-radius: 9px; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  white-space: nowrap; transition: all 0.15s;
+}
+.wa-help-btn:hover { background: #16a34a; }
+
+footer {
+  background: var(--ink); color: #666;
+  text-align: center; padding: 20px 14px;
+  font-size: 12px; line-height: 2;
+}
+footer a { color: #888; text-decoration: none; }
+
+.hidden { display: none !important; }
+
+@media (max-width: 480px) {
+  .hero h1 { font-size: 21px; }
+  .rc-details { grid-template-columns: 1fr; }
+  .tl-label { font-size: 9px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <a href="index.html" class="logo">
+    <div class="logo-icon">🖨️</div>
+    <div>
+      <span class="logo-text">PrintKaro</span>
+      <span class="logo-sub">Padrauna ka Apna Print Shop</span>
+    </div>
+  </a>
+  <a href="index.html" class="order-btn">🖨️ New Order</a>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-tag">📦 Order Tracking</div>
+  <h1>Apna order <em>track</em> karo</h1>
+  <p>Order ID ya Mobile Number se status check karo</p>
+</div>
+
+<!-- Search Card -->
+<div class="search-wrap">
+  <div class="search-card">
+    <h3>🔍 Order Status Check Karo</h3>
+
+    <!-- Tabs -->
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabOrderId" onclick="switchTab('orderId')">📋 Order ID se</button>
+      <button class="tab-btn" id="tabMobile" onclick="switchTab('mobile')">📱 Mobile se</button>
+    </div>
+
+    <!-- Input -->
+    <div class="input-row">
+      <input
+        type="text"
+        id="trackInput"
+        class="track-input"
+        placeholder="Order ID daalo — jaise PK481551"
+        onkeydown="if(event.key==='Enter') trackOrder()"
+        maxlength="20"
+      />
+      <button class="search-btn" id="searchBtn" onclick="trackOrder()">Track →</button>
+    </div>
+    <p class="input-hint" id="inputHint">💡 Order ID aapko success page pe mili thi — jaise #PK481551</p>
+  </div>
+</div>
+
+<!-- Results -->
+<div class="results-wrap" id="resultsWrap"></div>
+
+<!-- Footer -->
+<footer>
+  <p>📍 Padrauna, Kushinagar, Uttar Pradesh &nbsp;|&nbsp; 📞 <a href="tel:8542843598">8542843598</a></p>
+  <p style="color:#444;font-size:11px">PrintKaro — Trusted Print Service • Ghar tak Delivery</p>
+</footer>
+
+<script>
+let currentTab = 'orderId';
+
+function switchTab(tab) {
+  currentTab = tab;
+  const input = document.getElementById('trackInput');
+  const hint = document.getElementById('inputHint');
+  document.getElementById('tabOrderId').classList.toggle('active', tab === 'orderId');
+  document.getElementById('tabMobile').classList.toggle('active', tab === 'mobile');
+  document.getElementById('resultsWrap').innerHTML = '';
+
+  if (tab === 'orderId') {
+    input.placeholder = 'Order ID daalo — jaise PK481551';
+    input.maxLength = 20;
+    input.inputMode = 'text';
+    hint.textContent = '💡 Order ID aapko success page pe mili thi — jaise #PK481551';
+  } else {
+    input.placeholder = 'Mobile number daalo — jaise 9876543210';
+    input.maxLength = 10;
+    input.inputMode = 'numeric';
+    hint.textContent = '💡 Wahi mobile number jo order karte waqt diya tha';
+  }
+  input.value = '';
+  input.focus();
+}
+
+async function trackOrder() {
+  const input = document.getElementById('trackInput').value.trim().replace('#', '').toUpperCase();
+  const resultsWrap = document.getElementById('resultsWrap');
+  const btn = document.getElementById('searchBtn');
+
+  if (!input) {
+    resultsWrap.innerHTML = errorBox('❌ Kuch toh daalo!', 'Order ID ya Mobile Number likhein pehle.');
+    return;
+  }
+
+  if (currentTab === 'mobile' && !/^\d{10}$/.test(input)) {
+    resultsWrap.innerHTML = errorBox('❌ Galat number', '10 digit ka mobile number daalo.');
+    return;
+  }
+
+  if (!window._db) {
+    resultsWrap.innerHTML = errorBox('⚠️ Connection Error', 'Internet check karo aur dobara try karo.');
+    return;
+  }
+
+  // Loading
+  btn.disabled = true; btn.textContent = '⏳...';
+  resultsWrap.innerHTML = `<div class="state-box"><div class="state-icon">⏳</div><p class="state-title">Dhoondh raha hoon...</p></div>`;
+
+  try {
+    const { collection, query, where, getDocs } = window._fbFns;
+    let q;
+
+    if (currentTab === 'orderId') {
+      q = query(collection(window._db, 'printOrders'), where('orderId', '==', input));
+    } else {
+      q = query(collection(window._db, 'printOrders'), where('shipping.phone', '==', input));
+    }
+
+    const snap = await getDocs(q);
+    btn.disabled = false; btn.textContent = 'Track →';
+
+    if (snap.empty) {
+      resultsWrap.innerHTML = errorBox(
+        '🔍 Koi order nahi mila',
+        currentTab === 'orderId'
+          ? 'Order ID check karo — bilkul waise likhein jaise #PK481551 pe mili thi (PK ke baad numbers).'
+          : 'Is mobile number pe koi order nahi mila. Wahi number use karo jo order karte waqt diya tha.'
+      );
+      return;
+    }
+
+    // Sort by date — latest pehle
+    const orders = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+    resultsWrap.innerHTML = orders.map(o => renderOrderCard(o)).join('');
+
+  } catch(e) {
+    btn.disabled = false; btn.textContent = 'Track →';
+    console.error(e);
+    resultsWrap.innerHTML = errorBox('⚠️ Error aaya', 'Kuch gadbad hui. Internet check karo aur dobara try karo.');
+  }
+}
+
+function renderOrderCard(o) {
+  const p = o.pricing || {};
+  const sh = o.shipping || {};
+  const opts = o.options || {};
+  const status = o.status || 'pending';
+
+  // Timeline steps
+  const steps = [
+    { key: 'pending',   icon: '📋', label: 'Order\nReceived' },
+    { key: 'printing',  icon: '🖨️', label: 'Printing' },
+    { key: 'shipped',   icon: '🚚', label: 'Shipped' },
+    { key: 'done',      icon: '✅', label: 'Delivered' },
+  ];
+
+  const statusOrder = ['pending', 'printing', 'shipped', 'done'];
+  const currentIdx = statusOrder.indexOf(status);
+  const isCancelled = status === 'cancelled';
+
+  const timelineHTML = isCancelled
+    ? `<div style="text-align:center;padding:10px 0;color:#ef4444;font-weight:700;font-size:14px">❌ Yeh order cancel ho gaya hai</div>`
+    : `<div class="tl-steps">
+        ${steps.map((s, i) => {
+          let cls = '';
+          if (i < currentIdx) cls = 'done';
+          else if (i === currentIdx) cls = 'active';
+          return `<div class="tl-step ${cls}">
+            <div class="tl-dot">${i < currentIdx ? '✓' : s.icon}</div>
+            <div class="tl-label">${s.label.replace('\n','<br>')}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+  // Status message
+  const statusMessages = {
+    pending:  '⏳ Aapka order hamare paas pahunch gaya hai. Hum jald hi print karna shuru karenge!',
+    printing: '🖨️ Aapka document print ho raha hai. Thodi der mein dispatch ho jaayega!',
+    shipped:  '🚚 Aapka order dispatch ho gaya! Jald hi aapke address pe pahunchega.',
+    done:     '✅ Order successfully deliver ho gaya! PrintKaro use karne ke liye shukriya 🙏',
+    cancelled:'❌ Aapka order cancel ho gaya. Koi sawaal ho toh WhatsApp pe contact karein.',
+  };
+
+  // Date format
+  let dateStr = '—';
+  if (o.createdAt?.seconds) {
+    const d = new Date(o.createdAt.seconds * 1000);
+    dateStr = d.toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' }) +
+              ' • ' + d.toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  const statusLabels = {
+    pending: '⏳ Pending', printing: '🖨️ Printing',
+    shipped: '🚚 Shipped', done: '✅ Delivered', cancelled: '❌ Cancelled'
+  };
+
+  return `
+  <div class="result-card">
+    <div class="rc-header">
+      <div>
+        <div class="rc-order-id">#${o.orderId || '—'}</div>
+        <div class="rc-time">${dateStr}</div>
+      </div>
+      <span class="status-badge status-${status}">${statusLabels[status] || status}</span>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-title">📍 Order Progress</div>
+      ${timelineHTML}
+    </div>
+
+    <div class="status-msg ${status}">${statusMessages[status] || ''}</div>
+
+    <div class="rc-details">
+      <div class="rd-group">
+        <div class="rd-label">👤 Customer</div>
+        <div class="rd-val"><strong>${sh.name || '—'}</strong><br>${sh.city || ''}, ${sh.state || ''}</div>
+      </div>
+      <div class="rd-group">
+        <div class="rd-label">🖨️ Print Details</div>
+        <div class="rd-val">
+          ${opts.printType === 'bw' ? 'B&W' : 'Colour'} • ${opts.paperSize || 'A4'}<br>
+          ${o.pageCount || '?'} pages • ${opts.copies || 1} copies
+        </div>
+      </div>
+      <div class="rd-group">
+        <div class="rd-label">📁 File</div>
+        <div class="rd-val" style="word-break:break-all;font-size:12px">${o.fileName || '—'}</div>
+      </div>
+      <div class="rd-group">
+        <div class="rd-label">💰 Amount</div>
+        <div class="rd-val"><strong style="font-size:16px;font-family:'Space Grotesk',sans-serif">₹${p.total || '—'}</strong><br><span style="font-size:11px;color:var(--ink3)">Cash on Delivery</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-card">
+    <div>
+      <strong>Koi sawaal hai? 🙋</strong>
+      <p>WhatsApp pe contact karo — hum turant reply karenge</p>
+    </div>
+    <a class="wa-help-btn" href="https://wa.me/918542843598?text=${encodeURIComponent('Namaste! Mera order #' + (o.orderId||'') + ' ke baare mein poochna tha.')}" target="_blank">
+      💬 WhatsApp Karo
+    </a>
+  </div>`;
+}
+
+function errorBox(title, msg) {
+  return `<div class="state-box">
+    <div class="state-icon">🔍</div>
+    <div class="state-title">${title}</div>
+    <p class="state-sub">${msg}</p>
+  </div>`;
+}
+
+// URL se auto-fill — agar koi ?order=PK123 se aaya
+window.addEventListener('firebase-ready', () => {
+  const params = new URLSearchParams(window.location.search);
+  const orderId = params.get('order');
+  if (orderId) {
+    document.getElementById('trackInput').value = orderId;
+    trackOrder();
+  }
+});
+</script>
+</body>
+</html>
