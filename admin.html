@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PrintKaro Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAz5d2x3pTtge7w-ry8Jm__1bV0pAbK6q0",
+    authDomain: "print-portal-77974.firebaseapp.com",
+    projectId: "print-portal-77974",
+    storageBucket: "print-portal-77974.firebasestorage.app",
+    messagingSenderId: "445425067214",
+    appId: "1:445425067214:web:d2b2e0d5b9eac4d08e9c9f",
+    measurementId: "G-0MELKVXBSL"
+  };
+
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  const db = getFirestore(app);
+  window._db = db;
+  window._fbFns = { collection, getDocs, doc, updateDoc, addDoc, deleteDoc, query, orderBy, onSnapshot, serverTimestamp };
+  window.dispatchEvent(new Event("firebase-ready"));
+</script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f0f0f;
+  --ink2: #3a3a3a;
+  --ink3: #777;
+  --surface: #f5f3ef;
+  --white: #fff;
+  --accent: #e8440a;
+  --accent-light: #fff1ec;
+  --green: #1a7a3f;
+  --green-light: #edf7f1;
+  --border: #e4e1db;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --radius: 14px;
+  --radius-sm: 9px;
+
+  --pending: #f59e0b;
+  --pending-bg: #fffbeb;
+  --printing: #3b82f6;
+  --printing-bg: #eff6ff;
+  --shipped: #8b5cf6;
+  --shipped-bg: #f5f3ff;
+  --done: #10b981;
+  --done-bg: #ecfdf5;
+  --cancelled: #ef4444;
+  --cancelled-bg: #fef2f2;
+}
+
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--surface); color: var(--ink); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* ── Login ── */
+.login-screen {
+  min-height: 100vh; display: flex;
+  align-items: center; justify-content: center;
+  padding: 20px; background: var(--ink);
+}
+.login-card {
+  background: #1a1a1a; border: 1px solid #2a2a2a;
+  border-radius: 20px; padding: 40px 32px;
+  width: 100%; max-width: 380px; text-align: center;
+}
+.login-logo {
+  width: 64px; height: 64px; background: var(--accent);
+  border-radius: 18px; display: flex; align-items: center;
+  justify-content: center; font-size: 30px;
+  margin: 0 auto 20px;
+}
+.login-card h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px; color: white; font-weight: 700;
+  margin-bottom: 4px;
+}
+.login-card p { color: #666; font-size: 13px; margin-bottom: 28px; }
+.login-input {
+  width: 100%; padding: 13px 16px;
+  background: #111; border: 1.5px solid #333;
+  border-radius: 10px; color: white;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 15px; outline: none;
+  transition: border 0.15s; margin-bottom: 12px;
+  text-align: center; letter-spacing: 3px;
+}
+.login-input:focus { border-color: var(--accent); }
+.login-btn {
+  width: 100%; padding: 13px;
+  background: var(--accent); color: white; border: none;
+  border-radius: 10px; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 15px; font-weight: 700; transition: all 0.15s;
+}
+.login-btn:hover { background: #c73808; }
+.login-err { color: #ef4444; font-size: 13px; margin-top: 10px; display: none; }
+
+/* ── Admin Layout ── */
+.admin-layout { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 220px; background: var(--ink); color: white;
+  display: flex; flex-direction: column;
+  position: fixed; top: 0; left: 0; height: 100vh;
+  z-index: 50; transition: transform 0.25s;
+}
+.sidebar-logo {
+  padding: 20px 18px; border-bottom: 1px solid #1e1e1e;
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-logo-icon {
+  width: 36px; height: 36px; background: var(--accent);
+  border-radius: 9px; display: flex; align-items: center;
+  justify-content: center; font-size: 17px; flex-shrink: 0;
+}
+.sidebar-logo-text { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; }
+.sidebar-logo-sub { font-size: 10px; color: #555; display: block; margin-top: 1px; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 18px; cursor: pointer; font-size: 13.5px;
+  color: #888; transition: all 0.15s; border-left: 3px solid transparent;
+  font-weight: 500; position: relative;
+}
+.nav-item:hover { color: white; background: rgba(255,255,255,0.04); }
+.nav-item.active { color: white; border-left-color: var(--accent); background: rgba(232,68,10,0.08); }
+.nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--accent); color: white;
+  border-radius: 10px; padding: 2px 7px; font-size: 10px; font-weight: 700;
+}
+
+.sidebar-bottom { margin-top: auto; padding: 16px 18px; border-top: 1px solid #1e1e1e; }
+.logout-btn {
+  width: 100%; padding: 10px; background: transparent;
+  border: 1px solid #333; border-radius: 8px;
+  color: #666; cursor: pointer; font-size: 13px;
+  font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.15s;
+}
+.logout-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+/* Main Content */
+.main-content { margin-left: 220px; flex: 1; min-height: 100vh; }
+
+.topbar {
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 14px 24px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 40;
+}
+.topbar h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px; font-weight: 700; letter-spacing: -0.3px;
+}
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.live-badge {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--green-light); color: var(--green);
+  padding: 5px 11px; border-radius: 20px; font-size: 12px; font-weight: 600;
+}
+.live-dot {
+  width: 7px; height: 7px; background: var(--green);
+  border-radius: 50%; animation: blink 1.5s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.page-body { padding: 20px 24px; }
+
+/* Stats */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+.stat-card {
+  background: white; border-radius: var(--radius);
+  padding: 18px 16px; border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.stat-label { font-size: 11px; font-weight: 700; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; }
+.stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.stat-sub { font-size: 11px; color: var(--ink3); margin-top: 4px; }
+.stat-icon { font-size: 22px; margin-bottom: 10px; }
+
+/* Filters */
+.filters-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+.filter-btn {
+  padding: 7px 14px; border: 1.5px solid var(--border);
+  border-radius: 20px; background: white; cursor: pointer;
+  font-size: 12.5px; font-weight: 600; transition: all 0.15s;
+  color: var(--ink3); font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.active { border-color: var(--accent); background: var(--accent); color: white; }
+.search-input {
+  margin-left: auto; padding: 8px 14px;
+  border: 1.5px solid var(--border); border-radius: 20px;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px;
+  outline: none; transition: border 0.15s; min-width: 200px;
+}
+.search-input:focus { border-color: var(--accent); }
+
+/* Orders */
+.orders-list { display: flex; flex-direction: column; gap: 12px; }
+.order-card {
+  background: white; border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  overflow: hidden; transition: box-shadow 0.15s;
+}
+.order-card:hover { box-shadow: var(--shadow-lg); }
+.order-card.new-order { animation: slideIn 0.3s ease; border-left: 3px solid var(--accent); }
+@keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+
+.order-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; border-bottom: 1px solid #f5f5f5;
+  flex-wrap: wrap;
+}
+.order-id { font-family: 'Space Grotesk', sans-serif; font-size: 16px; font-weight: 700; color: var(--accent); }
+.order-time { font-size: 11.5px; color: var(--ink3); }
+.status-badge {
+  padding: 4px 11px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.3px;
+}
+.status-pending   { background: var(--pending-bg);   color: var(--pending); }
+.status-printing  { background: var(--printing-bg);  color: var(--printing); }
+.status-shipped   { background: var(--shipped-bg);   color: var(--shipped); }
+.status-done      { background: var(--done-bg);      color: var(--done); }
+.status-cancelled { background: var(--cancelled-bg); color: var(--cancelled); }
+
+.order-body { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
+.order-section { padding: 14px 18px; }
+.order-section:not(:last-child) { border-right: 1px solid #f5f5f5; }
+.os-label { font-size: 10px; font-weight: 700; color: #bbb; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 5px; }
+.os-val { font-size: 13px; line-height: 1.6; }
+.os-val strong { font-weight: 700; }
+.price-big { font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; color: var(--ink); }
+
+.order-actions { padding: 12px 18px; border-top: 1px solid #f5f5f5; display: flex; gap: 8px; flex-wrap: wrap; }
+.act-btn {
+  padding: 7px 14px; border-radius: 8px; cursor: pointer;
+  font-size: 12px; font-weight: 700; border: 1.5px solid;
+  font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.15s;
+}
+.act-btn:hover { transform: translateY(-1px); }
+.btn-printing  { border-color: var(--printing);  color: var(--printing);  background: var(--printing-bg); }
+.btn-shipped   { border-color: var(--shipped);   color: var(--shipped);   background: var(--shipped-bg); }
+.btn-done      { border-color: var(--done);      color: var(--done);      background: var(--done-bg); }
+.btn-cancel    { border-color: var(--cancelled); color: var(--cancelled); background: var(--cancelled-bg); }
+.btn-wa        { border-color: #22c55e; color: #22c55e; background: #f0fdf4; }
+
+/* Coupon Manager */
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.section-title { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.add-btn {
+  padding: 9px 18px; background: var(--accent); color: white;
+  border: none; border-radius: 9px; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; transition: all 0.15s;
+}
+.add-btn:hover { background: #c73808; }
+
+.coupon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.coupon-card {
+  background: white; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border); padding: 16px;
+  box-shadow: var(--shadow);
+}
+.coupon-code { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; letter-spacing: 1px; color: var(--accent); margin-bottom: 6px; }
+.coupon-info { font-size: 12.5px; color: var(--ink3); line-height: 1.7; }
+.coupon-info span { display: block; }
+.coupon-badge {
+  display: inline-block; padding: 3px 9px;
+  border-radius: 20px; font-size: 11px; font-weight: 700;
+  background: var(--green-light); color: var(--green); margin-bottom: 8px;
+}
+.coupon-badge.inactive { background: #fee2e2; color: #dc2626; }
+.coupon-actions { display: flex; gap: 8px; margin-top: 12px; }
+.del-btn {
+  padding: 6px 12px; background: #fee2e2; color: #dc2626;
+  border: none; border-radius: 7px; cursor: pointer; font-size: 12px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.15s;
+}
+.del-btn:hover { background: #dc2626; color: white; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 200; display: flex; align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(4px);
+}
+.modal {
+  background: white; border-radius: 18px;
+  padding: 28px 24px; max-width: 420px; width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+.modal h3 { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+.modal-form { display: flex; flex-direction: column; gap: 12px; }
+.mf-group { display: flex; flex-direction: column; gap: 5px; }
+.mf-group label { font-size: 11px; font-weight: 700; color: var(--ink3); letter-spacing: 0.4px; }
+.mf-group input, .mf-group select {
+  padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 9px;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px;
+  outline: none; transition: border 0.15s;
+}
+.mf-group input:focus, .mf-group select:focus { border-color: var(--accent); }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-cancel {
+  flex: 1; padding: 11px; border: 1.5px solid var(--border);
+  border-radius: 9px; background: white; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 600;
+}
+.modal-save {
+  flex: 2; padding: 11px; background: var(--accent); color: white;
+  border: none; border-radius: 9px; cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 700;
+}
+
+/* Password change */
+.settings-card {
+  background: white; border-radius: var(--radius);
+  border: 1px solid var(--border); padding: 22px 20px;
+  max-width: 420px; box-shadow: var(--shadow);
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--ink); color: white;
+  padding: 12px 18px; border-radius: 11px;
+  font-size: 13px; font-weight: 600; z-index: 999;
+  animation: toastIn 0.25s ease;
+  box-shadow: var(--shadow-lg);
+}
+@keyframes toastIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.toast.success { background: var(--green); }
+.toast.error { background: #dc2626; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 20px; color: var(--ink3); }
+.empty-state .em-icon { font-size: 48px; margin-bottom: 14px; }
+.empty-state p { font-size: 14px; }
+
+.loading-state { text-align: center; padding: 60px 20px; color: var(--ink3); font-size: 14px; }
+
+.hidden { display: none !important; }
+
+/* Password change hint */
+.pass-hint { background: #fffbeb; border: 1px solid #fbbf24; border-radius: 9px; padding: 11px 14px; font-size: 12.5px; color: #78350f; margin-bottom: 14px; }
+
+/* Notification banner */
+.notif-banner {
+  background: var(--ink); color: white;
+  padding: 11px 20px; font-size: 12.5px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid #2a2a2a;
+}
+.notif-enable-btn {
+  margin-left: auto; padding: 5px 14px;
+  background: var(--accent); color: white; border: none;
+  border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+@media (max-width: 900px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .order-body { grid-template-columns: 1fr; }
+  .order-section:not(:last-child) { border-right: none; border-bottom: 1px solid #f5f5f5; }
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main-content { margin-left: 0; }
+  .topbar { padding: 12px 16px; }
+  .page-body { padding: 14px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🖨️</div>
+    <h2>Admin Login</h2>
+    <p>PrintKaro Admin Panel</p>
+    <input type="password" id="passInput" class="login-input" placeholder="Password" onkeydown="if(event.key==='Enter') doLogin()" />
+    <button class="login-btn" onclick="doLogin()">Login Karo →</button>
+    <p class="login-err" id="loginErr">❌ Galat password!</p>
+  </div>
+</div>
+
+<!-- ══ ADMIN APP ══ -->
+<div id="adminApp" class="admin-layout hidden">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">🖨️</div>
+      <div>
+        <span class="sidebar-logo-text">PrintKaro</span>
+        <span class="sidebar-logo-sub">Admin Panel</span>
+      </div>
+    </div>
+    <nav style="padding: 10px 0;">
+      <div class="nav-item active" onclick="showPage('orders')" id="nav-orders">
+        <span class="nav-icon">📦</span> Orders
+        <span class="nav-badge" id="pendingBadge" style="display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="showPage('coupons')" id="nav-coupons">
+        <span class="nav-icon">🎟️</span> Coupons
+      </div>
+      <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
+        <span class="nav-icon">⚙️</span> Settings
+      </div>
+    </nav>
+    <div class="sidebar-bottom">
+      <button class="logout-btn" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+
+    <!-- Notification banner -->
+    <div class="notif-banner" id="notifBanner" style="display:none">
+      🔔 Browser notifications enable karo — naye order pe alert milega
+      <button class="notif-enable-btn" onclick="enableNotifications()">Enable Karo</button>
+    </div>
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <h1 id="pageTitle">Orders</h1>
+      <div class="topbar-right">
+        <div class="live-badge">
+          <div class="live-dot"></div>
+          Live
+        </div>
+        <span style="font-size:12px; color:var(--ink3)" id="lastRefresh"></span>
+      </div>
+    </div>
+
+    <!-- ── Orders Page ── -->
+    <div id="page-orders" class="page-body">
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📦</div>
+          <div class="stat-label">Total Orders</div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-sub">Abhi tak</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-label">Pending</div>
+          <div class="stat-value" id="stat-pending" style="color:var(--pending)">—</div>
+          <div class="stat-sub">Action chahiye</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-label">Aaj ka Revenue</div>
+          <div class="stat-value" id="stat-revenue">—</div>
+          <div class="stat-sub">Aaj ke orders</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-label">Completed</div>
+          <div class="stat-value" id="stat-done" style="color:var(--green)">—</div>
+          <div class="stat-sub">Deliver ho gaye</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters-row">
+        <button class="filter-btn active" onclick="setFilter('all', this)">Sab</button>
+        <button class="filter-btn" onclick="setFilter('pending', this)">⏳ Pending</button>
+        <button class="filter-btn" onclick="setFilter('printing', this)">🖨️ Printing</button>
+        <button class="filter-btn" onclick="setFilter('shipped', this)">🚚 Shipped</button>
+        <button class="filter-btn" onclick="setFilter('done', this)">✅ Done</button>
+        <button class="filter-btn" onclick="setFilter('cancelled', this)">❌ Cancelled</button>
+        <input class="search-input" type="text" placeholder="🔍 Name ya Order ID..." oninput="setSearch(this.value)" />
+      </div>
+
+      <div id="ordersContainer">
+        <div class="loading-state">⏳ Orders load ho rahe hain...</div>
+      </div>
+    </div>
+
+    <!-- ── Coupons Page ── -->
+    <div id="page-coupons" class="page-body hidden">
+      <div class="section-header">
+        <span class="section-title">🎟️ Coupon Codes</span>
+        <button class="add-btn" onclick="openCouponModal()">+ New Coupon</button>
+      </div>
+      <div class="coupon-grid" id="couponGrid">
+        <div class="loading-state">⏳ Coupons load ho rahe hain...</div>
+      </div>
+    </div>
+
+    <!-- ── Settings Page ── -->
+    <div id="page-settings" class="page-body hidden">
+      <div class="section-title" style="margin-bottom:16px">⚙️ Settings</div>
+      <div class="settings-card">
+        <div class="pass-hint">
+          💡 Password yahan se change karo. Purana password bhool gaye? File mein <code>ADMIN_PASSWORD</code> variable dhundho.
+        </div>
+        <div class="modal-form">
+          <div class="mf-group">
+            <label>PURANA PASSWORD</label>
+            <input type="password" id="oldPass" placeholder="Purana password" />
+          </div>
+          <div class="mf-group">
+            <label>NAYA PASSWORD</label>
+            <input type="password" id="newPass" placeholder="Naya password likhein" />
+          </div>
+          <div class="mf-group">
+            <label>NAYA PASSWORD CONFIRM</label>
+            <input type="password" id="newPass2" placeholder="Dobara likhein" />
+          </div>
+          <button class="modal-save" style="border-radius:9px; padding:12px" onclick="changePassword()">Password Change Karo</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Coupon Modal -->
+<div class="modal-overlay hidden" id="couponModal">
+  <div class="modal">
+    <h3>🎟️ Naya Coupon Banao</h3>
+    <div class="modal-form">
+      <div class="mf-group">
+        <label>COUPON CODE *</label>
+        <input type="text" id="c_code" placeholder="e.g. PRINT20" oninput="this.value=this.value.toUpperCase()" />
+      </div>
+      <div class="mf-group">
+        <label>TYPE</label>
+        <select id="c_type">
+          <option value="percent">Percentage (e.g. 10% off)</option>
+          <option value="flat">Flat Amount (e.g. ₹20 off)</option>
+        </select>
+      </div>
+      <div class="mf-group">
+        <label>VALUE (% ya ₹)</label>
+        <input type="number" id="c_value" placeholder="e.g. 10" min="1" />
+      </div>
+      <div class="mf-group">
+        <label>MINIMUM ORDER (₹) — 0 matlab no limit</label>
+        <input type="number" id="c_minorder" placeholder="e.g. 100" min="0" value="0" />
+      </div>
+      <div class="mf-group">
+        <label>MAX USES (0 matlab unlimited)</label>
+        <input type="number" id="c_maxuses" placeholder="e.g. 50" min="0" value="0" />
+      </div>
+      <div class="mf-group">
+        <label>EXPIRY DATE (optional)</label>
+        <input type="date" id="c_expiry" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeCouponModal()">Cancel</button>
+      <button class="modal-save" onclick="saveCoupon()">Coupon Save Karo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  PASSWORD — Yahan change karo
+// ══════════════════════════════════════════
+let ADMIN_PASSWORD = 'Vikas123@';
+
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let allOrders = [];
+let currentFilter = 'all';
+let currentSearch = '';
+let unsubscribeOrders = null;
+let prevOrderCount = 0;
+
+// ── Login ──
+function doLogin() {
+  const pass = document.getElementById('passInput').value;
+  if (pass === ADMIN_PASSWORD) {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('adminApp').classList.remove('hidden');
+    initAdmin();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('passInput').value = '';
+    setTimeout(() => document.getElementById('passInput').focus(), 100);
+  }
+}
+function doLogout() {
+  if (unsubscribeOrders) unsubscribeOrders();
+  document.getElementById('adminApp').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('passInput').value = '';
+}
+
+// ── Init ──
+function initAdmin() {
+  checkNotifPermission();
+  window.addEventListener('firebase-ready', startListening, { once: true });
+  if (window._db) startListening();
+  loadCoupons();
+  setInterval(() => {
+    document.getElementById('lastRefresh').textContent = 'Live • ' + new Date().toLocaleTimeString('hi-IN');
+  }, 5000);
+}
+
+// ── Real-time listener ──
+function startListening() {
+  const { collection, query, orderBy, onSnapshot } = window._fbFns;
+  const q = query(collection(window._db, 'printOrders'), orderBy('createdAt', 'desc'));
+  unsubscribeOrders = onSnapshot(q, (snapshot) => {
+    const newOrders = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Notify on new order
+    if (allOrders.length > 0 && newOrders.length > allOrders.length) {
+      const newest = newOrders[0];
+      showToast('🔔 New Order: ' + newest.orderId, 'success');
+      triggerNotification(newest);
+      playBeep();
+    }
+    allOrders = newOrders;
+    prevOrderCount = newOrders.length;
+    renderOrders();
+    updateStats();
+    document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString('hi-IN');
+  });
+}
+
+// ── Stats ──
+function updateStats() {
+  const today = new Date().toDateString();
+  const pending = allOrders.filter(o => o.status === 'pending').length;
+  const done = allOrders.filter(o => o.status === 'done').length;
+  const todayRevenue = allOrders.filter(o => {
+    const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt || 0);
+    return d.toDateString() === today && o.status !== 'cancelled';
+  }).reduce((s, o) => s + (o.pricing?.total || 0), 0);
+  document.getElementById('stat-total').textContent = allOrders.length;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-revenue').textContent = '₹' + todayRevenue;
+  document.getElementById('stat-done').textContent = done;
+  const badge = document.getElementById('pendingBadge');
+  badge.textContent = pending;
+  badge.style.display = pending > 0 ? 'inline-block' : 'none';
+}
+
+// ── Render Orders ──
+function renderOrders() {
+  const container = document.getElementById('ordersContainer');
+  let filtered = allOrders.filter(o => {
+    if (currentFilter !== 'all' && o.status !== currentFilter) return false;
+    if (currentSearch) {
+      const q = currentSearch.toLowerCase();
+      if (!o.orderId?.toLowerCase().includes(q) &&
+          !o.shipping?.name?.toLowerCase().includes(q) &&
+          !o.shipping?.phone?.includes(q)) return false;
+    }
+    return true;
+  });
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="em-icon">📭</div><p>Koi order nahi mila</p></div>`;
+    return;
+  }
+  container.innerHTML = filtered.map(o => renderOrderCard(o)).join('');
+}
+
+function renderOrderCard(o) {
+  const statusLabel = { pending:'⏳ Pending', printing:'🖨️ Printing', shipped:'🚚 Shipped', done:'✅ Done', cancelled:'❌ Cancelled' };
+  const time = o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString('hi-IN') : 'Abhi';
+  const p = o.pricing || {};
+  const opt = o.options || {};
+  return `
+  <div class="order-card" id="oc-${o.id}">
+    <div class="order-header">
+      <span class="order-id">#${o.orderId}</span>
+      <span class="order-time">🕐 ${time}</span>
+      <span class="status-badge status-${o.status}">${statusLabel[o.status] || o.status}</span>
+      ${o.coupon ? `<span style="background:#ecfdf5;color:#15803d;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700">🎟️ ${o.coupon}</span>` : ''}
+    </div>
+    <div class="order-body">
+      <div class="order-section">
+        <div class="os-label">👤 Customer</div>
+        <div class="os-val">
+          <strong>${o.shipping?.name || '—'}</strong><br>
+          📞 ${o.shipping?.phone || '—'}<br>
+          📍 ${o.shipping?.address || ''}, ${o.shipping?.city || ''}<br>
+          ${o.shipping?.state || ''} — ${o.shipping?.pincode || ''}
+        </div>
+      </div>
+      <div class="order-section">
+        <div class="os-label">🖨️ Print Details</div>
+        <div class="os-val">
+          📄 ${o.fileName || '—'}<br>
+          ${o.pageCount || '?'} pages • ${opt.copies || 1} copies<br>
+          ${opt.printType === 'bw' ? '⬛ B&W' : '🌈 Colour'} • ${opt.paperSize || 'A4'}<br>
+          ${opt.sides === 'double' ? 'Double Side' : 'Single Side'}${opt.binding !== 'none' ? ' • ' + opt.binding : ''}<br>
+          🚚 ${opt.shipping === 'express' ? '⚡ Express' : 'Standard'}
+        </div>
+      </div>
+      <div class="order-section">
+        <div class="os-label">💰 Payment</div>
+        <div class="os-val">
+          <div class="price-big">₹${p.total || 0}</div>
+          <span style="font-size:12px;color:#aaa">Print ₹${p.printCost||0} + Ship ₹${p.shippingCost||0}${p.bindingCost>0?' + Binding ₹'+p.bindingCost:''}${p.discount>0?' − Disc ₹'+p.discount:''}</span><br>
+          <span style="font-size:12px;color:var(--pending);font-weight:600">💵 Cash on Delivery</span>
+        </div>
+      </div>
+    </div>
+    <div class="order-actions">
+      ${o.status !== 'printing'  && o.status !== 'done' && o.status !== 'cancelled' ? `<button class="act-btn btn-printing" onclick="updateStatus('${o.id}','printing')">🖨️ Printing Start</button>` : ''}
+      ${o.status !== 'shipped'   && o.status !== 'done' && o.status !== 'cancelled' ? `<button class="act-btn btn-shipped"  onclick="updateStatus('${o.id}','shipped')">🚚 Shipped</button>` : ''}
+      ${o.status !== 'done'      && o.status !== 'cancelled' ? `<button class="act-btn btn-done"     onclick="updateStatus('${o.id}','done')">✅ Delivered</button>` : ''}
+      ${o.status !== 'cancelled' ? `<button class="act-btn btn-cancel" onclick="updateStatus('${o.id}','cancelled')">❌ Cancel</button>` : ''}
+      <button class="act-btn btn-wa" onclick="waContact('${o.id}')">📲 WhatsApp</button>
+    </div>
+  </div>`;
+}
+
+// ── Update Status ──
+async function updateStatus(docId, newStatus) {
+  try {
+    const { doc, updateDoc } = window._fbFns;
+    await updateDoc(doc(window._db, 'printOrders', docId), { status: newStatus });
+    showToast('Status update hua: ' + newStatus, 'success');
+  } catch(e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// ── WhatsApp contact ──
+function waContact(docId) {
+  const o = allOrders.find(x => x.id === docId);
+  if (!o) return;
+  const statusMap = { pending: 'Pending', printing: 'Print ho raha hai', shipped: 'Ship ho gaya', done: 'Deliver ho gaya' };
+  const msg = `Namaste ${o.shipping?.name}! 🙏\n\nAapka PrintKaro order *#${o.orderId}* ka update:\n✅ Status: *${statusMap[o.status] || o.status}*\n\nKoi sawaal ho to batayein.\n\n— PrintKaro Team 🖨️`;
+  window.open(`https://wa.me/91${o.shipping?.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ── Filter & Search ──
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOrders();
+}
+function setSearch(val) {
+  currentSearch = val;
+  renderOrders();
+}
+
+// ══════════════════════════════════════════
+//  COUPONS
+// ══════════════════════════════════════════
+async function loadCoupons() {
+  if (!window._db) { window.addEventListener('firebase-ready', loadCoupons, { once: true }); return; }
+  const { collection, getDocs, query, orderBy } = window._fbFns;
+  try {
+    const snap = await getDocs(query(collection(window._db, 'coupons'), orderBy('createdAt', 'desc')));
+    const coupons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderCoupons(coupons);
+  } catch(e) {
+    document.getElementById('couponGrid').innerHTML = '<div class="loading-state">Error loading coupons</div>';
+  }
+}
+
+function renderCoupons(coupons) {
+  const grid = document.getElementById('couponGrid');
+  if (!coupons.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="em-icon">🎟️</div><p>Koi coupon nahi hai. Banao!</p></div>`;
+    return;
+  }
+  grid.innerHTML = coupons.map(c => {
+    const expired = c.expiry && new Date(c.expiry) < new Date();
+    return `
+    <div class="coupon-card">
+      <div class="coupon-code">${c.code}</div>
+      <span class="coupon-badge ${expired ? 'inactive' : ''}">${expired ? '❌ Expired' : '✅ Active'}</span>
+      <div class="coupon-info">
+        <span>💸 ${c.type === 'percent' ? c.value + '% Off' : '₹' + c.value + ' Off'}</span>
+        <span>📦 Min Order: ₹${c.minOrder || 0}</span>
+        <span>🔢 Max Uses: ${c.maxUses || 'Unlimited'}</span>
+        <span>📅 Expiry: ${c.expiry || 'No expiry'}</span>
+      </div>
+      <div class="coupon-actions">
+        <button class="del-btn" onclick="deleteCoupon('${c.id}','${c.code}')">🗑️ Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openCouponModal() { document.getElementById('couponModal').classList.remove('hidden'); }
+function closeCouponModal() { document.getElementById('couponModal').classList.add('hidden'); }
+
+async function saveCoupon() {
+  const code = document.getElementById('c_code').value.trim().toUpperCase();
+  const type = document.getElementById('c_type').value;
+  const value = parseFloat(document.getElementById('c_value').value);
+  const minOrder = parseFloat(document.getElementById('c_minorder').value) || 0;
+  const maxUses = parseInt(document.getElementById('c_maxuses').value) || 0;
+  const expiry = document.getElementById('c_expiry').value;
+  if (!code || !value) { showToast('Code aur value bharo!', 'error'); return; }
+  try {
+    const { collection, addDoc, serverTimestamp } = window._fbFns;
+    await addDoc(collection(window._db, 'coupons'), { code, type, value, minOrder, maxUses, expiry: expiry || null, usedCount: 0, createdAt: serverTimestamp() });
+    showToast('✅ Coupon save hua: ' + code, 'success');
+    closeCouponModal();
+    loadCoupons();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function deleteCoupon(id, code) {
+  if (!confirm(code + ' delete karna chahte ho?')) return;
+  try {
+    const { doc, deleteDoc } = window._fbFns;
+    await deleteDoc(doc(window._db, 'coupons', id));
+    showToast('🗑️ Coupon delete hua', 'success');
+    loadCoupons();
+  } catch(e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+// ── Page switching ──
+function showPage(page) {
+  ['orders','coupons','settings'].forEach(p => {
+    document.getElementById('page-' + p).classList.toggle('hidden', p !== page);
+    document.getElementById('nav-' + p).classList.toggle('active', p === page);
+  });
+  const titles = { orders: 'Orders Dashboard', coupons: 'Coupon Manager', settings: 'Settings' };
+  document.getElementById('pageTitle').textContent = titles[page];
+  if (page === 'coupons') loadCoupons();
+}
+
+// ── Notifications ──
+function checkNotifPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    document.getElementById('notifBanner').style.display = 'flex';
+  }
+}
+function enableNotifications() {
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') {
+      document.getElementById('notifBanner').style.display = 'none';
+      showToast('✅ Notifications enable ho gayi!', 'success');
+    }
+  });
+}
+function triggerNotification(order) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification('🖨️ New PrintKaro Order!', {
+      body: '#' + order.orderId + ' — ' + (order.shipping?.name || '') + ' — ₹' + (order.pricing?.total || '?'),
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🖨️</text></svg>'
+    });
+  }
+}
+function playBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = 880; gain.gain.value = 0.3;
+    osc.start(); osc.stop(ctx.currentTime + 0.2);
+  } catch(e) {}
+}
+
+// ── Password change ──
+function changePassword() {
+  const oldP = document.getElementById('oldPass').value;
+  const newP = document.getElementById('newPass').value;
+  const newP2 = document.getElementById('newPass2').value;
+  if (oldP !== ADMIN_PASSWORD) { showToast('❌ Purana password galat hai!', 'error'); return; }
+  if (newP.length < 6) { showToast('❌ Password kam se kam 6 characters ka hona chahiye', 'error'); return; }
+  if (newP !== newP2) { showToast('❌ Dono passwords match nahi kar rahe', 'error'); return; }
+  ADMIN_PASSWORD = newP;
+  showToast('✅ Password change ho gaya! Yaad rakhein.', 'success');
+  document.getElementById('oldPass').value = '';
+  document.getElementById('newPass').value = '';
+  document.getElementById('newPass2').value = '';
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg, type = '') {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  clearTimeout(toastTimer);
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  toastTimer = setTimeout(() => t.remove(), 3500);
+}
+</script>
+</body>
+</html>

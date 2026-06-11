@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PrintKaro – Padrauna ka Apna Print Shop</title>
+<meta name="description" content="PDF upload karo, print karwa ke ghar pe paao. Padrauna, Kushinagar mein home delivery print service." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  emailjs.init('pRL7-OE8_pmset2W7');
+</script>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAz5d2x3pTtge7w-ry8Jm__1bV0pAbK6q0",
+    authDomain: "print-portal-77974.firebaseapp.com",
+    projectId: "print-portal-77974",
+    storageBucket: "print-portal-77974.firebasestorage.app",
+    messagingSenderId: "445425067214",
+    appId: "1:445425067214:web:d2b2e0d5b9eac4d08e9c9f",
+    measurementId: "G-0MELKVXBSL"
+  };
+
+  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  const db = getFirestore(app);
+  window._db = db;
+  window._fbFns = { collection, addDoc, serverTimestamp };
+  window.dispatchEvent(new Event("firebase-ready"));
+</script>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f0f0f;
+  --ink2: #3a3a3a;
+  --ink3: #777;
+  --surface: #f5f3ef;
+  --white: #ffffff;
+  --accent: #e8440a;
+  --accent-light: #fff1ec;
+  --accent-hover: #c73808;
+  --green: #1a7a3f;
+  --green-light: #edf7f1;
+  --border: #e4e1db;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  --radius: 14px;
+  --radius-sm: 9px;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ── */
+.header {
+  background: var(--ink);
+  color: white;
+  padding: 13px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid #222;
+}
+.logo { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+.logo-icon {
+  width: 38px; height: 38px;
+  background: var(--accent);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.logo-text { font-family: 'Space Grotesk', sans-serif; font-size: 19px; font-weight: 700; display: block; color: white; letter-spacing: -0.3px; }
+.logo-sub { font-size: 10px; color: #888; display: block; margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.badge-cod { background: #1a3a22; color: #4ade80; padding: 5px 11px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+
+/* ── Hero ── */
+.hero {
+  background: var(--ink);
+  color: white;
+  padding: 40px 20px 32px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 240px; height: 240px;
+  background: var(--accent);
+  border-radius: 50%;
+  opacity: 0.07;
+}
+.hero-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(232,68,10,0.15); color: #ff7043;
+  border: 1px solid rgba(232,68,10,0.25);
+  padding: 5px 14px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; margin-bottom: 16px;
+  letter-spacing: 0.3px;
+}
+.hero h1 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 28px; font-weight: 700;
+  line-height: 1.2; margin-bottom: 10px;
+  letter-spacing: -0.5px;
+}
+.hero h1 em { color: var(--accent); font-style: normal; }
+.hero p { color: #999; font-size: 13.5px; line-height: 1.6; }
+.hero-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.hero-chip {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  color: #ccc; padding: 5px 12px; border-radius: 20px; font-size: 11.5px;
+}
+
+/* ── Steps ── */
+.steps-bar {
+  display: flex; justify-content: center;
+  background: white; padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+}
+.step-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 13px; font-size: 12px; color: var(--ink3);
+  position: relative;
+}
+.step-item:not(:last-child)::after {
+  content: '›'; position: absolute; right: -5px;
+  color: #ccc; font-size: 16px;
+}
+.step-item.active { color: var(--accent); font-weight: 700; }
+.step-item.done { color: var(--green); }
+.step-dot {
+  width: 23px; height: 23px; border-radius: 50%;
+  background: #eee; display: flex; align-items: center;
+  justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0;
+}
+.step-item.active .step-dot { background: var(--accent); color: white; }
+.step-item.done .step-dot { background: var(--green); color: white; }
+
+/* ── Content ── */
+.content { max-width: 580px; margin: 0 auto; padding: 20px 14px 90px; }
+.card {
+  background: var(--white); border-radius: var(--radius);
+  padding: 22px 20px; box-shadow: var(--shadow);
+  margin-bottom: 14px; border: 1px solid var(--border);
+}
+.card-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 16px; font-weight: 700;
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  letter-spacing: -0.2px;
+}
+.card-title .title-icon {
+  width: 32px; height: 32px; border-radius: 9px;
+  background: var(--accent-light); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+}
+
+/* ── Dropzone ── */
+.dropzone {
+  border: 2px dashed var(--border); border-radius: 12px;
+  padding: 32px 16px; text-align: center;
+  cursor: pointer; transition: all 0.2s; background: #fafafa;
+}
+.dropzone:hover, .dropzone.drag-active { border-color: var(--accent); background: var(--accent-light); }
+.dropzone.has-file { border-color: var(--green); background: var(--green-light); border-style: solid; }
+.drop-icon { font-size: 38px; margin-bottom: 12px; display: block; }
+.drop-title { font-weight: 700; font-size: 14.5px; margin-bottom: 4px; }
+.drop-sub { color: var(--ink3); font-size: 12.5px; }
+.drop-note {
+  display: inline-block; margin-top: 12px;
+  background: #f0f0f0; padding: 3px 11px;
+  border-radius: 20px; font-size: 11px; color: #888;
+}
+.file-info { display: flex; align-items: center; gap: 14px; text-align: left; }
+.file-icon-big { font-size: 34px; }
+.file-name { font-weight: 700; font-size: 14px; word-break: break-all; }
+.file-meta { color: var(--ink3); font-size: 12px; margin-top: 3px; }
+.remove-btn {
+  margin-left: auto; background: #fee2e2;
+  border: none; color: #dc2626;
+  width: 28px; height: 28px; border-radius: 50%;
+  cursor: pointer; font-size: 12px; flex-shrink: 0;
+  transition: all 0.15s;
+}
+.remove-btn:hover { background: #dc2626; color: white; }
+
+.page-count-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 14px; padding: 11px 14px;
+  background: #f8f8f8; border-radius: 10px; font-size: 13px;
+  border: 1px solid var(--border);
+}
+.hint { color: #aaa; font-size: 11px; }
+
+/* ── Counter ── */
+.counter {
+  display: flex; align-items: center;
+  border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden;
+}
+.counter button {
+  background: #f8f8f8; border: none;
+  width: 36px; height: 36px; cursor: pointer;
+  font-size: 17px; font-weight: 600; transition: all 0.15s;
+}
+.counter button:hover { background: var(--accent); color: white; }
+.counter span { min-width: 44px; text-align: center; font-weight: 700; font-size: 15px; }
+
+/* ── Options ── */
+.option-group { margin-bottom: 20px; }
+.option-label {
+  display: block; font-size: 11px; font-weight: 700;
+  color: var(--ink3); text-transform: uppercase;
+  letter-spacing: 0.7px; margin-bottom: 9px;
+}
+.toggle-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.toggle-btn {
+  padding: 9px 16px; border: 1.5px solid var(--border); border-radius: 9px;
+  background: white; cursor: pointer; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 500; transition: all 0.15s; color: var(--ink2);
+}
+.toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.toggle-btn.sel {
+  border-color: var(--accent); background: var(--accent-light);
+  color: var(--accent); font-weight: 700;
+}
+.toggle-btn.sm { padding: 7px 13px; font-size: 12.5px; }
+
+/* ── Price Card ── */
+.price-card {
+  background: var(--ink); color: white;
+  border-radius: 12px; padding: 16px 18px; margin-top: 20px;
+}
+.price-row {
+  display: flex; justify-content: space-between;
+  padding: 5px 0; font-size: 13px; color: #bbb;
+}
+.total-row {
+  border-top: 1px solid #2a2a2a; margin-top: 6px;
+  padding-top: 9px; color: white; font-weight: 700;
+  font-size: 15px;
+}
+
+/* ── Shipping ── */
+.ship-option-row { display: flex; gap: 10px; margin-bottom: 20px; }
+.ship-card {
+  flex: 1; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 15px 12px;
+  text-align: center; cursor: pointer; transition: all 0.15s;
+}
+.ship-card:hover { border-color: var(--accent); }
+.ship-card.sel { border-color: var(--accent); background: var(--accent-light); }
+.ship-card strong { display: block; font-size: 14px; margin-bottom: 4px; font-weight: 700; }
+.ship-card span { display: block; font-size: 12px; color: var(--ink3); }
+.ship-price { color: var(--accent) !important; font-weight: 700 !important; font-size: 16px !important; margin-top: 6px; }
+
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label { font-size: 11px; font-weight: 700; color: var(--ink3); letter-spacing: 0.4px; }
+.form-group input {
+  border: 1.5px solid var(--border); border-radius: 9px;
+  padding: 10px 12px; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13.5px; outline: none; transition: border 0.15s;
+  color: var(--ink); background: white;
+}
+.form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(232,68,10,0.08); }
+
+.cod-notice {
+  margin-top: 16px; background: #fffbeb;
+  border: 1.5px solid #fbbf24; border-radius: 10px;
+  padding: 11px 14px; font-size: 13px; color: #78350f;
+}
+
+/* ── Coupon ── */
+.coupon-row {
+  display: flex; gap: 8px; margin-top: 14px;
+}
+.coupon-input {
+  flex: 1; border: 1.5px solid var(--border); border-radius: 9px;
+  padding: 10px 12px; font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; outline: none; transition: border 0.15s;
+  text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+}
+.coupon-input:focus { border-color: var(--accent); }
+.coupon-btn {
+  padding: 10px 18px; background: var(--ink); color: white;
+  border: none; border-radius: 9px; cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 13px; font-weight: 700; transition: all 0.15s;
+  white-space: nowrap;
+}
+.coupon-btn:hover { background: #222; }
+.coupon-msg { font-size: 12px; margin-top: 6px; font-weight: 600; }
+.coupon-msg.success { color: var(--green); }
+.coupon-msg.error { color: #dc2626; }
+
+/* ── Review ── */
+.review-section {
+  padding: 13px 0; border-bottom: 1px solid #f3f3f3;
+}
+.review-section:last-child { border-bottom: none; }
+.review-label {
+  font-size: 10.5px; font-weight: 700; color: #bbb;
+  text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 4px;
+}
+.review-value { font-size: 13.5px; color: var(--ink); line-height: 1.55; }
+.final-price-card {
+  background: var(--ink); color: white;
+  border-radius: var(--radius); padding: 18px; margin-top: 18px;
+}
+.fp-row {
+  display: flex; justify-content: space-between;
+  padding: 6px 0; font-size: 13px; color: #bbb;
+}
+.fp-row.grand {
+  border-top: 1px solid #2a2a2a; margin-top: 8px;
+  padding-top: 12px; color: white;
+  font-size: 20px; font-weight: 800;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.fp-row.discount { color: #4ade80; }
+.fp-note {
+  margin-top: 12px; background: rgba(255,255,255,0.07);
+  border-radius: 8px; padding: 10px; font-size: 12px;
+  text-align: center; color: #fbbf24;
+}
+.order-id-row {
+  text-align: center; margin-top: 14px;
+  font-size: 13px; color: var(--ink3);
+}
+.order-id-row strong { color: var(--accent); font-size: 14px; }
+
+/* ── Nav ── */
+.nav-row {
+  display: flex; gap: 10px; justify-content: space-between;
+  margin-top: 8px;
+}
+.btn-back {
+  padding: 13px 22px; border: 1.5px solid var(--border);
+  border-radius: 10px; background: white; cursor: pointer;
+  font-size: 14px; font-weight: 600; font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: all 0.15s; color: var(--ink2);
+}
+.btn-back:hover { border-color: var(--ink); }
+.btn-next {
+  padding: 13px 28px; background: var(--accent); color: white;
+  border: none; border-radius: 10px; cursor: pointer;
+  font-size: 14px; font-weight: 700; font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.15s; letter-spacing: -0.2px;
+}
+.btn-next:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(232,68,10,0.3); }
+.btn-next:disabled { background: #d0cdc8; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-submit {
+  flex: 1; padding: 15px 24px; background: var(--green); color: white;
+  border: none; border-radius: 10px; cursor: pointer;
+  font-size: 15px; font-weight: 700; font-family: 'Space Grotesk', sans-serif;
+  transition: all 0.15s; letter-spacing: -0.2px;
+}
+.btn-submit:hover:not(:disabled) { background: #15663a; transform: translateY(-1px); }
+.btn-submit:disabled { background: #aaa; cursor: not-allowed; }
+
+/* ── Success ── */
+.success-page {
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 14px; min-height: 80vh;
+}
+.success-card {
+  background: white; border-radius: 20px;
+  padding: 38px 28px; text-align: center;
+  max-width: 420px; width: 100%;
+  box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+}
+.success-anim {
+  width: 72px; height: 72px; background: var(--green);
+  color: white; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; margin: 0 auto 20px;
+  animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.success-card h2 {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 26px; font-weight: 700; margin-bottom: 6px;
+  letter-spacing: -0.4px;
+}
+.order-id-big { font-size: 21px; color: var(--accent); font-weight: 700; margin-bottom: 10px; }
+.success-card p { color: var(--ink3); font-size: 14px; line-height: 1.65; margin-bottom: 20px; }
+.success-details {
+  background: var(--surface); border-radius: 12px;
+  padding: 15px; margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+.srow {
+  display: flex; justify-content: space-between;
+  padding: 5px 0; font-size: 13px;
+}
+.srow span:last-child { font-weight: 700; }
+.wa-btn {
+  width: 100%; padding: 14px;
+  background: #22c55e; color: white;
+  border: none; border-radius: 11px; cursor: pointer;
+  font-size: 14px; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  margin-bottom: 10px; transition: all 0.15s;
+}
+.wa-btn:hover { background: #16a34a; }
+.wa-sent { color: var(--green); font-weight: 600; margin-bottom: 10px; font-size: 14px; }
+.new-order-btn {
+  width: 100%; padding: 12px; background: white;
+  border: 1.5px solid var(--border); border-radius: 11px;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  color: var(--ink3); font-family: 'Plus Jakarta Sans', sans-serif;
+  transition: all 0.15s;
+}
+.new-order-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ── Footer ── */
+footer {
+  background: var(--ink); color: #666;
+  text-align: center; padding: 20px 14px;
+  font-size: 12px; line-height: 2; margin-top: 20px;
+}
+footer .footer-sub { color: #444; font-size: 11px; }
+footer a { color: #888; text-decoration: none; }
+
+.hidden { display: none !important; }
+
+@media (max-width: 480px) {
+  .hero h1 { font-size: 22px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .steps-bar { gap: 0; }
+  .step-item { padding: 0 8px; font-size: 10px; }
+  .step-item span { display: none; }
+  .step-item.active span { display: inline; }
+  .nav-row { flex-wrap: wrap; }
+  .btn-back { flex: 0 0 auto; }
+  .btn-submit { flex: 1; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">🖨️</div>
+      <div>
+        <span class="logo-text">PrintKaro</span>
+        <span class="logo-sub">Padrauna ka Apna Print Shop</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="badge-cod">✓ COD Available</span>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <div id="hero" class="hero">
+    <div class="hero-tag">🚀 Print from Ghar Baithe</div>
+    <h1>Upload karo, hum <em>print</em> karenge<br>aur ghar pe pahunchayenge</h1>
+    <p>Padrauna, Kushinagar ka sabse fast print service</p>
+    <div class="hero-chips">
+      <span class="hero-chip">📄 PDF Support</span>
+      <span class="hero-chip">🎨 B&W + Colour</span>
+      <span class="hero-chip">💵 Cash on Delivery</span>
+      <span class="hero-chip">⚡ Express Available</span>
+    </div>
+  </div>
+
+  <!-- Steps bar -->
+  <div class="steps-bar" id="stepsBar">
+    <div class="step-item active" data-step="0">
+      <div class="step-dot">1</div><span>Upload</span>
+    </div>
+    <div class="step-item" data-step="1">
+      <div class="step-dot">2</div><span>Options</span>
+    </div>
+    <div class="step-item" data-step="2">
+      <div class="step-dot">3</div><span>Delivery</span>
+    </div>
+    <div class="step-item" data-step="3">
+      <div class="step-dot">4</div><span>Review</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Step 0: Upload -->
+    <div id="step0" class="step-panel">
+      <div class="card">
+        <div class="card-title">
+          <div class="title-icon">📁</div>
+          PDF Upload Karo
+        </div>
+        <div id="dropzone" class="dropzone"
+          ondragover="event.preventDefault(); this.classList.add('drag-active')"
+          ondragleave="this.classList.remove('drag-active')"
+          ondrop="handleDrop(event)"
+          onclick="document.getElementById('fileInput').click()">
+          <div id="dropPrompt">
+            <span class="drop-icon">⬆️</span>
+            <p class="drop-title">PDF yahan drop karo</p>
+            <p class="drop-sub">ya click karke select karo</p>
+            <span class="drop-note">Max 50MB • Sirf PDF</span>
+          </div>
+          <div id="fileInfo" class="file-info hidden">
+            <div class="file-icon-big">📄</div>
+            <div>
+              <p class="file-name" id="fileName"></p>
+              <p class="file-meta" id="fileMeta"></p>
+            </div>
+            <button class="remove-btn" onclick="removeFile(event)">✕</button>
+          </div>
+        </div>
+        <input id="fileInput" type="file" accept=".pdf" hidden onchange="handleFileInput(this)" />
+
+        <div id="pageCountRow" class="page-count-row hidden">
+          <span style="font-weight:600">📄 Pages kitne hain?</span>
+          <div class="counter">
+            <button onclick="changePages(-1)">−</button>
+            <span id="pageCountDisplay">1</span>
+            <button onclick="changePages(1)">+</button>
+          </div>
+          <span class="hint">Auto-detect se update karo agar galat ho</span>
+        </div>
+      </div>
+
+      <div class="nav-row" style="justify-content:flex-end">
+        <button class="btn-next" id="btn0next" disabled onclick="goStep(1)">Options Choose Karo →</button>
+      </div>
+    </div>
+
+    <!-- Step 1: Options -->
+    <div id="step1" class="step-panel hidden">
+      <div class="card">
+        <div class="card-title">
+          <div class="title-icon">⚙️</div>
+          Print Options
+        </div>
+
+        <div class="option-group">
+          <label class="option-label">Print Type</label>
+          <div class="toggle-row">
+            <button class="toggle-btn sel" data-group="printType" data-val="bw" onclick="selectOption('printType','bw',this)">⬛ Black & White — ₹2/page</button>
+            <button class="toggle-btn" data-group="printType" data-val="color" onclick="selectOption('printType','color',this)">🌈 Colour — ₹10/page</button>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label class="option-label">Paper Size</label>
+          <div class="toggle-row">
+            <button class="toggle-btn sm sel" data-group="paperSize" data-val="A4" onclick="selectOption('paperSize','A4',this)">A4</button>
+            <button class="toggle-btn sm" data-group="paperSize" data-val="A3" onclick="selectOption('paperSize','A3',this)">A3</button>
+            <button class="toggle-btn sm" data-group="paperSize" data-val="Letter" onclick="selectOption('paperSize','Letter',this)">Letter</button>
+            <button class="toggle-btn sm" data-group="paperSize" data-val="Legal" onclick="selectOption('paperSize','Legal',this)">Legal</button>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label class="option-label">Sides</label>
+          <div class="toggle-row">
+            <button class="toggle-btn sel" data-group="sides" data-val="single" onclick="selectOption('sides','single',this)">Single Side</button>
+            <button class="toggle-btn" data-group="sides" data-val="double" onclick="selectOption('sides','double',this)">Double Side (save karo)</button>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label class="option-label">Copies: <strong id="copiesDisplay">1</strong></label>
+          <div class="counter">
+            <button onclick="changeCopies(-1)">−</button>
+            <span id="copiesNum">1</span>
+            <button onclick="changeCopies(1)">+</button>
+          </div>
+        </div>
+
+        <div class="option-group">
+          <label class="option-label">Binding</label>
+          <div class="toggle-row">
+            <button class="toggle-btn sm sel" data-group="binding" data-val="none" onclick="selectOption('binding','none',this)">None</button>
+            <button class="toggle-btn sm" data-group="binding" data-val="staple" onclick="selectOption('binding','staple',this)">📌 Staple +₹5</button>
+            <button class="toggle-btn sm" data-group="binding" data-val="spiral" onclick="selectOption('binding','spiral',this)">🔘 Spiral +₹30</button>
+            <button class="toggle-btn sm" data-group="binding" data-val="hardcover" onclick="selectOption('binding','hardcover',this)">📚 Hardcover +₹80</button>
+          </div>
+        </div>
+
+        <div class="price-card">
+          <div class="price-row"><span id="printCostLabel">Print</span><span>₹<span id="printCostVal">0</span></span></div>
+          <div class="price-row" id="bindingRow" style="display:none"><span>Binding</span><span>₹<span id="bindingCostVal">0</span></span></div>
+          <div class="price-row total-row"><span>Subtotal</span><span>₹<span id="subtotalVal">0</span></span></div>
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="goStep(0)">← Back</button>
+        <button class="btn-next" onclick="goStep(2)">Delivery Details →</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Shipping -->
+    <div id="step2" class="step-panel hidden">
+      <div class="card">
+        <div class="card-title">
+          <div class="title-icon">🚚</div>
+          Delivery Details
+        </div>
+
+        <div class="ship-option-row">
+          <div class="ship-card sel" id="shipStandard" onclick="selectShipping('standard')">
+            <strong>Standard</strong>
+            <span>3–5 din</span>
+            <span class="ship-price">₹40</span>
+          </div>
+          <div class="ship-card" id="shipExpress" onclick="selectShipping('express')">
+            <strong>⚡ Express</strong>
+            <span>1–2 din</span>
+            <span class="ship-price">₹80</span>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>PURA NAAM *</label>
+            <input type="text" id="s_name" placeholder="Pura naam likhein" oninput="checkStep2()" />
+          </div>
+          <div class="form-group">
+            <label>PHONE NUMBER *</label>
+            <input type="tel" id="s_phone" placeholder="10 digit number" oninput="checkStep2()" maxlength="10" />
+          </div>
+          <div class="form-group full">
+            <label>GHAR KA ADDRESS *</label>
+            <input type="text" id="s_address" placeholder="Mohalla, gali, makaan no." oninput="checkStep2()" />
+          </div>
+          <div class="form-group">
+            <label>CITY / TEHSIL *</label>
+            <input type="text" id="s_city" placeholder="City ya Tehsil" oninput="checkStep2()" />
+          </div>
+          <div class="form-group">
+            <label>STATE</label>
+            <input type="text" id="s_state" value="Uttar Pradesh" />
+          </div>
+          <div class="form-group">
+            <label>PINCODE *</label>
+            <input type="text" id="s_pincode" placeholder="274304" oninput="checkStep2()" maxlength="6" />
+          </div>
+        </div>
+
+        <div class="cod-notice">
+          💵 <strong>Cash on Delivery</strong> — Delivery pe payment karna hai. Pehle kuch nahi dena.
+        </div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="goStep(1)">← Back</button>
+        <button class="btn-next" id="btn2next" disabled onclick="goStep(3)">Order Review →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Review -->
+    <div id="step3" class="step-panel hidden">
+      <div class="card">
+        <div class="card-title">
+          <div class="title-icon">📋</div>
+          Order Review
+        </div>
+
+        <div class="review-section">
+          <div class="review-label">📄 File</div>
+          <div class="review-value" id="rev_file"></div>
+        </div>
+        <div class="review-section">
+          <div class="review-label">🖨️ Print</div>
+          <div class="review-value" id="rev_print"></div>
+        </div>
+        <div class="review-section">
+          <div class="review-label">🚚 Delivery</div>
+          <div class="review-value" id="rev_delivery"></div>
+        </div>
+
+        <!-- Coupon Code -->
+        <div style="margin-top:16px">
+          <label class="option-label">🎟️ Coupon Code (agar hai to)</label>
+          <div class="coupon-row">
+            <input class="coupon-input" type="text" id="couponInput" placeholder="CODE YAHAN LIKHO" oninput="this.value=this.value.toUpperCase()" />
+            <button class="coupon-btn" onclick="applyCoupon()">Apply</button>
+          </div>
+          <div id="couponMsg" class="coupon-msg" style="display:none"></div>
+        </div>
+
+        <div class="final-price-card">
+          <div class="fp-row"><span>Print Cost</span><span>₹<span id="fp_print">0</span></span></div>
+          <div class="fp-row" id="fp_binding_row" style="display:none"><span>Binding</span><span>₹<span id="fp_binding">0</span></span></div>
+          <div class="fp-row"><span id="fp_ship_label">Shipping (standard)</span><span>₹<span id="fp_ship">40</span></span></div>
+          <div class="fp-row discount" id="fp_discount_row" style="display:none"><span>🎟️ Discount (<span id="fp_coupon_code"></span>)</span><span>−₹<span id="fp_discount">0</span></span></div>
+          <div class="fp-row grand"><span>Total</span><span>₹<span id="fp_total">0</span></span></div>
+          <div class="fp-note">💵 Cash on Delivery — Delivery pe cash dena hoga</div>
+        </div>
+        <div class="order-id-row">Order ID: <strong id="rev_orderId"></strong></div>
+      </div>
+
+      <div class="nav-row">
+        <button class="btn-back" onclick="goStep(2)">← Back</button>
+        <button class="btn-submit" id="btnSubmit" onclick="placeOrder()">✅ Order Place Karo</button>
+      </div>
+    </div>
+
+    <!-- Success -->
+    <div id="successPage" class="success-page hidden">
+      <div class="success-card">
+        <div class="success-anim">✓</div>
+        <h2>Order Placed! 🎉</h2>
+        <p class="order-id-big" id="suc_orderId"></p>
+        <p>Aapka order receive ho gaya hai.<br>Hum jald hi aapse contact karenge.</p>
+        <div class="success-details">
+          <div class="srow"><span>Total Amount</span><span>₹<span id="suc_total"></span></span></div>
+          <div class="srow"><span>Payment</span><span>Cash on Delivery</span></div>
+          <div class="srow"><span>Expected Delivery</span><span id="suc_delivery"></span></div>
+        </div>
+        <button class="wa-btn" id="waBtn" onclick="sendWhatsApp()">📲 WhatsApp pe Confirm Karo</button>
+        <p class="wa-sent hidden" id="waSent">✅ WhatsApp message open ho gaya!</p>
+        <button class="new-order-btn" onclick="resetApp()">+ New Order Dalna Hai</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>📍 Padrauna, Kushinagar, Uttar Pradesh &nbsp;|&nbsp; 📞 <a href="tel:8542843598">8542843598</a></p>
+    <p class="footer-sub">PrintKaro — Trusted Print Service • Ghar tak Delivery</p>
+  </footer>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  PRICES — Change karo yahan
+// ══════════════════════════════════════════
+const PRICES = { bw: { A4: 2, A3: 4, Letter: 2, Legal: 3 }, color: { A4: 10, A3: 18, Letter: 10, Legal: 14 } };
+const SHIPPING = { standard: 40, express: 80 };
+const BINDING = { none: 0, staple: 5, spiral: 30, hardcover: 80 };
+
+// ══════════════════════════════════════════
+//  COUPON CODES — Yahan manage karo
+//  Format: 'CODE': { type: 'percent'|'flat', value: number, minOrder: number }
+// ══════════════════════════════════════════
+const COUPONS = {
+  'PRINT10': { type: 'percent', value: 10, minOrder: 0, desc: '10% Off' },
+  'FLAT20':  { type: 'flat',    value: 20, minOrder: 100, desc: '₹20 Off (min order ₹100)' },
+  'VIKAS50': { type: 'flat',    value: 50, minOrder: 200, desc: '₹50 Off (min order ₹200)' },
+};
+
+let state = {
+  step: 0, file: null, pageCount: 1,
+  options: { printType: 'bw', paperSize: 'A4', copies: 1, sides: 'single', binding: 'none', shipping: 'standard' },
+  shipping: { name: '', phone: '', address: '', city: '', state: 'Uttar Pradesh', pincode: '' },
+  orderId: 'PK' + Date.now().toString().slice(-6),
+  saving: false,
+  coupon: null,
+};
+
+// ── Calc ──
+function calcPrice() {
+  const base = PRICES[state.options.printType][state.options.paperSize];
+  const eff = state.options.sides === 'double' ? Math.ceil(state.pageCount / 2) : state.pageCount;
+  const printCost = base * eff * state.options.copies;
+  const shippingCost = SHIPPING[state.options.shipping];
+  const bindingCost = BINDING[state.options.binding] * state.options.copies;
+  const subtotal = printCost + shippingCost + bindingCost;
+  let discount = 0;
+  if (state.coupon) {
+    const c = COUPONS[state.coupon];
+    if (subtotal >= c.minOrder) {
+      discount = c.type === 'percent' ? Math.round(subtotal * c.value / 100) : c.value;
+    }
+  }
+  return { printCost, shippingCost, bindingCost, subtotal, discount, total: Math.max(0, subtotal - discount) };
+}
+
+// ── Navigation ──
+function goStep(n) {
+  document.getElementById('step' + state.step).classList.add('hidden');
+  state.step = n;
+  document.getElementById('step' + n).classList.remove('hidden');
+  document.getElementById('hero').style.display = n === 0 ? '' : 'none';
+  updateStepsBar();
+  if (n === 3) populateReview();
+  window.scrollTo(0, 0);
+}
+function updateStepsBar() {
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active', 'done');
+    if (s === state.step) el.classList.add('active');
+    else if (s < state.step) { el.classList.add('done'); el.querySelector('.step-dot').textContent = '✓'; }
+    else el.querySelector('.step-dot').textContent = s + 1;
+  });
+}
+
+// ── File handling ──
+function handleFile(f) {
+  if (!f || f.type !== 'application/pdf') { alert('Sirf PDF files allowed hain!'); return; }
+  if (f.size > 50 * 1024 * 1024) { alert('File 50MB se badi hai!'); return; }
+  state.file = f;
+  const pages = Math.max(1, Math.floor(f.size / 50000));
+  state.pageCount = pages;
+  document.getElementById('fileName').textContent = f.name;
+  document.getElementById('fileMeta').textContent = (f.size/1024).toFixed(0) + ' KB • ~' + pages + ' pages (neeche adjust karo)';
+  document.getElementById('dropPrompt').classList.add('hidden');
+  document.getElementById('fileInfo').classList.remove('hidden');
+  document.getElementById('dropzone').classList.add('has-file');
+  document.getElementById('pageCountRow').classList.remove('hidden');
+  document.getElementById('pageCountDisplay').textContent = pages;
+  document.getElementById('btn0next').disabled = false;
+  updatePricePreview();
+}
+function handleFileInput(input) { handleFile(input.files[0]); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('drag-active');
+  handleFile(e.dataTransfer.files[0]);
+}
+function removeFile(e) {
+  e.stopPropagation();
+  state.file = null;
+  document.getElementById('dropPrompt').classList.remove('hidden');
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('dropzone').classList.remove('has-file');
+  document.getElementById('pageCountRow').classList.add('hidden');
+  document.getElementById('btn0next').disabled = true;
+  document.getElementById('fileInput').value = '';
+}
+function changePages(d) {
+  state.pageCount = Math.max(1, state.pageCount + d);
+  document.getElementById('pageCountDisplay').textContent = state.pageCount;
+  updatePricePreview();
+}
+
+// ── Options ──
+function selectOption(group, val, btn) {
+  state.options[group] = val;
+  document.querySelectorAll('[data-group="' + group + '"]').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  updatePricePreview();
+}
+function changeCopies(d) {
+  state.options.copies = Math.max(1, state.options.copies + d);
+  document.getElementById('copiesDisplay').textContent = state.options.copies;
+  document.getElementById('copiesNum').textContent = state.options.copies;
+  updatePricePreview();
+}
+function updatePricePreview() {
+  const { printCost, bindingCost } = calcPrice();
+  const pg = state.options.sides === 'double' ? Math.ceil(state.pageCount/2) : state.pageCount;
+  document.getElementById('printCostLabel').textContent = 'Print (' + pg + 'pg × ' + state.options.copies + ')';
+  document.getElementById('printCostVal').textContent = printCost;
+  document.getElementById('bindingCostVal').textContent = bindingCost;
+  document.getElementById('bindingRow').style.display = bindingCost > 0 ? '' : 'none';
+  document.getElementById('subtotalVal').textContent = printCost + bindingCost;
+}
+
+// ── Shipping ──
+function selectShipping(type) {
+  state.options.shipping = type;
+  document.getElementById('shipStandard').classList.toggle('sel', type === 'standard');
+  document.getElementById('shipExpress').classList.toggle('sel', type === 'express');
+}
+function checkStep2() {
+  const ok = ['s_name','s_phone','s_address','s_city','s_pincode'].every(id => document.getElementById(id).value.trim() !== '');
+  document.getElementById('btn2next').disabled = !ok;
+}
+
+// ── Coupon ──
+function applyCoupon() {
+  const code = document.getElementById('couponInput').value.trim().toUpperCase();
+  const msgEl = document.getElementById('couponMsg');
+  msgEl.style.display = 'block';
+  if (!code) { msgEl.textContent = 'Code likhein pehle'; msgEl.className = 'coupon-msg error'; return; }
+  const coupon = COUPONS[code];
+  if (!coupon) { msgEl.textContent = '❌ Galat code hai'; msgEl.className = 'coupon-msg error'; state.coupon = null; populateReview(); return; }
+  const { subtotal } = calcPrice();
+  state.coupon = null;
+  const tempSubtotal = subtotal;
+  if (tempSubtotal < coupon.minOrder) {
+    msgEl.textContent = '❌ Min order ₹' + coupon.minOrder + ' chahiye'; msgEl.className = 'coupon-msg error'; return;
+  }
+  state.coupon = code;
+  msgEl.textContent = '✅ ' + coupon.desc + ' apply hua!'; msgEl.className = 'coupon-msg success';
+  populateReview();
+}
+
+// ── Review ──
+function populateReview() {
+  const sh = {
+    name: document.getElementById('s_name').value,
+    phone: document.getElementById('s_phone').value,
+    address: document.getElementById('s_address').value,
+    city: document.getElementById('s_city').value,
+    state: document.getElementById('s_state').value,
+    pincode: document.getElementById('s_pincode').value,
+  };
+  state.shipping = sh;
+  const { printCost, shippingCost, bindingCost, discount, total } = calcPrice();
+  document.getElementById('rev_file').textContent = state.file.name + ' (' + state.pageCount + ' pages)';
+  document.getElementById('rev_print').textContent =
+    (state.options.printType === 'bw' ? 'Black & White' : 'Colour') + ' • ' + state.options.paperSize + ' • ' +
+    (state.options.sides === 'single' ? 'Single Side' : 'Double Side') + ' • ' + state.options.copies + ' copies' +
+    (state.options.binding !== 'none' ? ' • ' + state.options.binding + ' binding' : '');
+  document.getElementById('rev_delivery').innerHTML = sh.name + ' • ' + sh.phone + '<br>' + sh.address + ', ' + sh.city + ', ' + sh.state + ' - ' + sh.pincode;
+  document.getElementById('fp_print').textContent = printCost;
+  document.getElementById('fp_binding').textContent = bindingCost;
+  document.getElementById('fp_binding_row').style.display = bindingCost > 0 ? '' : 'none';
+  document.getElementById('fp_ship_label').textContent = 'Shipping (' + state.options.shipping + ')';
+  document.getElementById('fp_ship').textContent = shippingCost;
+  document.getElementById('fp_discount_row').style.display = discount > 0 ? '' : 'none';
+  document.getElementById('fp_coupon_code').textContent = state.coupon || '';
+  document.getElementById('fp_discount').textContent = discount;
+  document.getElementById('fp_total').textContent = total;
+  document.getElementById('rev_orderId').textContent = '#' + state.orderId;
+}
+
+// ── Place Order ──
+async function placeOrder() {
+  if (state.saving) return;
+  state.saving = true;
+  const btn = document.getElementById('btnSubmit');
+  btn.disabled = true;
+  btn.textContent = '⏳ Order save ho raha hai...';
+
+  const { printCost, shippingCost, bindingCost, discount, total } = calcPrice();
+
+  if (window._db) {
+    try {
+      const { collection, addDoc, serverTimestamp } = window._fbFns;
+      await addDoc(collection(window._db, 'printOrders'), {
+        orderId: state.orderId,
+        fileName: state.file?.name,
+        pageCount: state.pageCount,
+        options: state.options,
+        shipping: state.shipping,
+        pricing: { printCost, shippingCost, bindingCost, discount, total },
+        coupon: state.coupon || null,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      });
+    } catch(e) {
+      console.error('Firebase error:', e);
+      btn.disabled = false;
+      btn.textContent = '✅ Order Place Karo';
+      state.saving = false;
+      alert('Error aaya! Internet check karo aur dobara try karo.');
+      return;
+    }
+  } else {
+    btn.disabled = false;
+    btn.textContent = '✅ Order Place Karo';
+    state.saving = false;
+    alert('Firebase connect nahi hua! Admin se contact karo.');
+    return;
+  }
+
+  // EmailJS — Admin ko email bhejo
+  try {
+    const sh = state.shipping;
+    await emailjs.send('service_hg0uyqv', 'template_x0zfsuu', {
+      order_id: '#' + state.orderId,
+      customer_name: sh.name,
+      customer_phone: sh.phone,
+      customer_address: sh.address + ', ' + sh.city + ', ' + sh.state + ' - ' + sh.pincode,
+      file_name: state.file?.name || '—',
+      page_count: state.pageCount,
+      print_type: state.options.printType === 'bw' ? 'Black & White' : 'Colour',
+      paper_size: state.options.paperSize,
+      copies: state.options.copies,
+      shipping_type: state.options.shipping === 'express' ? '⚡ Express (1-2 din)' : 'Standard (3-5 din)',
+      print_cost: printCost,
+      shipping_cost: shippingCost,
+      total_amount: total,
+      coupon: state.coupon ? state.coupon + ' (−₹' + discount + ')' : 'Koi coupon nahi',
+    });
+  } catch(e) {
+    console.warn('Email nahi gaya:', e);
+    // Email fail ho bhi to order place hota rahega
+  }
+
+  // Success
+  document.getElementById('step3').classList.add('hidden');
+  document.getElementById('hero').style.display = 'none';
+  document.querySelector('.steps-bar').style.display = 'none';
+  document.getElementById('successPage').classList.remove('hidden');
+  document.getElementById('suc_orderId').textContent = '#' + state.orderId;
+  document.getElementById('suc_total').textContent = total;
+  document.getElementById('suc_delivery').textContent = state.options.shipping === 'standard' ? '3–5 din' : '1–2 din';
+  window.scrollTo(0, 0);
+}
+
+// ── WhatsApp ──
+function sendWhatsApp() {
+  const { total, discount } = calcPrice();
+  const sh = state.shipping;
+  const msg = `🖨️ *New Print Order — ${state.orderId}*\n\n` +
+    `👤 *Customer:* ${sh.name}\n📞 *Phone:* ${sh.phone}\n` +
+    `📍 *Address:* ${sh.address}, ${sh.city}, ${sh.state} — ${sh.pincode}\n\n` +
+    `🖨️ *Print Details:*\n• Type: ${state.options.printType === 'bw' ? 'Black & White' : 'Colour'}\n` +
+    `• Paper: ${state.options.paperSize}\n• Pages: ${state.pageCount}\n• Copies: ${state.options.copies}\n` +
+    `• Sides: ${state.options.sides === 'single' ? 'Single Side' : 'Double Side'}\n` +
+    `• Binding: ${state.options.binding}\n• Delivery: ${state.options.shipping}\n\n` +
+    (discount > 0 ? `🎟️ *Coupon:* ${state.coupon} (−₹${discount})\n` : '') +
+    `💰 *Total:* ₹${total} (Cash on Delivery)\n\n` +
+    `📁 *File:* ${state.file?.name}`;
+  window.open(`https://wa.me/918542843598?text=${encodeURIComponent(msg)}`, '_blank');
+  document.getElementById('waBtn').classList.add('hidden');
+  document.getElementById('waSent').classList.remove('hidden');
+}
+
+// ── Reset ──
+function resetApp() {
+  state = {
+    step: 0, file: null, pageCount: 1,
+    options: { printType: 'bw', paperSize: 'A4', copies: 1, sides: 'single', binding: 'none', shipping: 'standard' },
+    shipping: { name: '', phone: '', address: '', city: '', state: 'Uttar Pradesh', pincode: '' },
+    orderId: 'PK' + Date.now().toString().slice(-6),
+    saving: false, coupon: null,
+  };
+  document.getElementById('successPage').classList.add('hidden');
+  document.getElementById('step0').classList.remove('hidden');
+  document.getElementById('hero').style.display = '';
+  document.querySelector('.steps-bar').style.display = '';
+  document.getElementById('dropPrompt').classList.remove('hidden');
+  document.getElementById('fileInfo').classList.add('hidden');
+  document.getElementById('dropzone').classList.remove('has-file');
+  document.getElementById('pageCountRow').classList.add('hidden');
+  document.getElementById('btn0next').disabled = true;
+  document.getElementById('fileInput').value = '';
+  document.getElementById('couponInput').value = '';
+  document.getElementById('couponMsg').style.display = 'none';
+  document.getElementById('waBtn').classList.remove('hidden');
+  document.getElementById('waSent').classList.add('hidden');
+  updateStepsBar();
+  updatePricePreview();
+  window.scrollTo(0, 0);
+}
+
+updatePricePreview();
+</script>
+</body>
+</html>
