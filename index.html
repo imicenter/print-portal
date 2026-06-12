@@ -3,13 +3,19 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PrintKaro – Padrauna ka Apna Print Shop</title>
-<meta name="description" content="PDF upload karo, print karwa ke ghar pe paao. Padrauna, Kushinagar mein home delivery print service." />
+<title>PrintKaro – Padrauna's Own Print Shop</title>
+<meta name="description" content="Upload your PDF, get it printed, and delivered to your home. Home delivery print service in Padrauna, Kushinagar." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
 <!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+<!-- PDF.js (for accurate page count detection) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
 <script>
   emailjs.init('pRL7-OE8_pmset2W7');
 </script>
@@ -39,7 +45,7 @@
   window._fbFns2 = { collection, getDocs, query, where };
   window._fbExtraFns = { doc, getDoc };
   window.dispatchEvent(new Event("firebase-ready"));
-  // Pricing Firebase se load karo
+  // Load pricing from Firebase
   window.addEventListener('firebase-ready', () => loadPricingFromFirebase(), { once: true });
   loadPricingFromFirebase();
 </script>
@@ -485,24 +491,22 @@ footer a { color: #888; text-decoration: none; }
       <div class="logo-icon">🖨️</div>
       <div>
         <span class="logo-text">PrintKaro</span>
-        <span class="logo-sub">Padrauna ka Apna Print Shop</span>
+        <span class="logo-sub">Padrauna's Own Print Shop</span>
       </div>
     </div>
     <div class="header-right">
       <a href="track.html" class="track-btn">📦 Track Order</a>
-      <span class="badge-cod">✓ COD Available</span>
     </div>
   </header>
 
   <!-- Hero -->
   <div id="hero" class="hero">
-    <div class="hero-tag">🚀 Print from Ghar Baithe</div>
-    <h1>Upload karo, hum <em>print</em> karenge<br>aur ghar pe pahunchayenge</h1>
-    <p>Padrauna, Kushinagar ka sabse fast print service</p>
+    <div class="hero-tag">🚀 Print From Home</div>
+    <h1>Upload your file, we'll <em>print</em> it<br>and deliver it to your door</h1>
+    <p>Padrauna, Kushinagar's fastest print service</p>
     <div class="hero-chips">
       <span class="hero-chip">📄 PDF Support</span>
       <span class="hero-chip">🎨 B&W + Colour</span>
-      <span class="hero-chip">💵 Cash on Delivery</span>
       <span class="hero-chip">⚡ Express Available</span>
     </div>
   </div>
@@ -530,7 +534,7 @@ footer a { color: #888; text-decoration: none; }
       <div class="card">
         <div class="card-title">
           <div class="title-icon">📁</div>
-          PDF Upload Karo
+          Upload PDF
         </div>
         <div id="dropzone" class="dropzone"
           ondragover="event.preventDefault(); this.classList.add('drag-active')"
@@ -539,9 +543,9 @@ footer a { color: #888; text-decoration: none; }
           onclick="document.getElementById('fileInput').click()">
           <div id="dropPrompt">
             <span class="drop-icon">⬆️</span>
-            <p class="drop-title">PDF yahan drop karo</p>
-            <p class="drop-sub">ya click karke select karo</p>
-            <span class="drop-note">Max 50MB • Sirf PDF</span>
+            <p class="drop-title">Drop your PDF here</p>
+            <p class="drop-sub">or click to select a file</p>
+            <span class="drop-note">Max 50MB • PDF only</span>
           </div>
           <div id="fileInfo" class="file-info hidden">
             <div class="file-icon-big">📄</div>
@@ -555,18 +559,13 @@ footer a { color: #888; text-decoration: none; }
         <input id="fileInput" type="file" accept=".pdf" hidden onchange="handleFileInput(this)" />
 
         <div id="pageCountRow" class="page-count-row hidden">
-          <span style="font-weight:600">📄 Pages kitne hain?</span>
-          <div class="counter">
-            <button onclick="changePages(-1)">−</button>
-            <span id="pageCountDisplay">1</span>
-            <button onclick="changePages(1)">+</button>
-          </div>
-          <span class="hint">Auto-detect se update karo agar galat ho</span>
+          <span style="font-weight:600">📄 Pages detected:</span>
+          <strong id="pageCountDisplay">1</strong>
         </div>
       </div>
 
       <div class="nav-row" style="justify-content:flex-end">
-        <button class="btn-next" id="btn0next" disabled onclick="goStep(1)">Options Choose Karo →</button>
+        <button class="btn-next" id="btn0next" disabled onclick="goStep(1)">Choose Options →</button>
       </div>
     </div>
 
@@ -600,7 +599,7 @@ footer a { color: #888; text-decoration: none; }
           <label class="option-label">Sides</label>
           <div class="toggle-row">
             <button class="toggle-btn sel" data-group="sides" data-val="single" onclick="selectOption('sides','single',this)">Single Side</button>
-            <button class="toggle-btn" data-group="sides" data-val="double" onclick="selectOption('sides','double',this)">Double Side (save karo)</button>
+            <button class="toggle-btn" data-group="sides" data-val="double" onclick="selectOption('sides','double',this)">Double Side (save more)</button>
           </div>
         </div>
 
@@ -625,7 +624,7 @@ footer a { color: #888; text-decoration: none; }
 
         <div class="price-card">
           <div class="price-row"><span id="printCostLabel">Print</span><span>₹<span id="printCostVal">0</span></span></div>
-          <div class="price-row" id="bindingRow" style="display:none"><span>Binding</span><span>₹<span id="bindingCostVal">0</span></span></div>
+          <div class="price-row" id="bindingRow" style="display:none"><span id="bindingLabel">Binding</span><span>₹<span id="bindingCostVal">0</span></span></div>
           <div class="price-row total-row"><span>Subtotal</span><span>₹<span id="subtotalVal">0</span></span></div>
         </div>
       </div>
@@ -647,20 +646,20 @@ footer a { color: #888; text-decoration: none; }
         <div class="ship-option-row">
           <div class="ship-card sel" id="shipStandard" onclick="selectShipping('standard')">
             <strong>Standard</strong>
-            <span>3–5 din</span>
+            <span>3–5 days</span>
             <span class="ship-price">₹40</span>
           </div>
           <div class="ship-card" id="shipExpress" onclick="selectShipping('express')">
             <strong>⚡ Express</strong>
-            <span>1–2 din</span>
+            <span>1–2 days</span>
             <span class="ship-price">₹80</span>
           </div>
         </div>
 
         <div class="form-grid">
           <div class="form-group">
-            <label>PURA NAAM *</label>
-            <input type="text" id="s_name" placeholder="Pura naam likhein" oninput="checkStep2()" />
+            <label>FULL NAME *</label>
+            <input type="text" id="s_name" placeholder="Enter your full name" oninput="checkStep2()" />
           </div>
           <div class="form-group">
             <label>PHONE NUMBER *</label>
@@ -668,12 +667,12 @@ footer a { color: #888; text-decoration: none; }
             <span id="phoneHint" style="font-size:11px;margin-top:4px;display:block"></span>
           </div>
           <div class="form-group full">
-            <label>GHAR KA ADDRESS *</label>
-            <input type="text" id="s_address" placeholder="Mohalla, gali, makaan no." oninput="checkStep2()" />
+            <label>HOME ADDRESS *</label>
+            <input type="text" id="s_address" placeholder="House/Flat no., street, locality" oninput="checkStep2()" />
           </div>
           <div class="form-group">
             <label>CITY / TEHSIL *</label>
-            <input type="text" id="s_city" placeholder="City ya Tehsil" oninput="checkStep2()" />
+            <input type="text" id="s_city" placeholder="City or Tehsil" oninput="checkStep2()" />
           </div>
           <div class="form-group">
             <label>STATE</label>
@@ -683,10 +682,6 @@ footer a { color: #888; text-decoration: none; }
             <label>PINCODE *</label>
             <input type="text" id="s_pincode" placeholder="274304" oninput="checkStep2()" maxlength="6" />
           </div>
-        </div>
-
-        <div class="cod-notice">
-          💵 <strong>Cash on Delivery</strong> — Delivery pe payment karna hai. Pehle kuch nahi dena.
         </div>
       </div>
 
@@ -719,9 +714,9 @@ footer a { color: #888; text-decoration: none; }
 
         <!-- Coupon Code -->
         <div style="margin-top:16px">
-          <label class="option-label">🎟️ Coupon Code (agar hai to)</label>
+          <label class="option-label">🎟️ Coupon Code (if you have one)</label>
           <div class="coupon-row">
-            <input class="coupon-input" type="text" id="couponInput" placeholder="CODE YAHAN LIKHO" oninput="this.value=this.value.toUpperCase()" />
+            <input class="coupon-input" type="text" id="couponInput" placeholder="ENTER CODE HERE" oninput="this.value=this.value.toUpperCase()" />
             <button class="coupon-btn" onclick="applyCoupon()">Apply</button>
           </div>
           <div id="couponMsg" class="coupon-msg" style="display:none"></div>
@@ -729,18 +724,17 @@ footer a { color: #888; text-decoration: none; }
 
         <div class="final-price-card">
           <div class="fp-row"><span>Print Cost</span><span>₹<span id="fp_print">0</span></span></div>
-          <div class="fp-row" id="fp_binding_row" style="display:none"><span>Binding</span><span>₹<span id="fp_binding">0</span></span></div>
+          <div class="fp-row" id="fp_binding_row" style="display:none"><span id="fp_binding_label">Binding</span><span>₹<span id="fp_binding">0</span></span></div>
           <div class="fp-row"><span id="fp_ship_label">Shipping (standard)</span><span>₹<span id="fp_ship">40</span></span></div>
           <div class="fp-row discount" id="fp_discount_row" style="display:none"><span>🎟️ Discount (<span id="fp_coupon_code"></span>)</span><span>−₹<span id="fp_discount">0</span></span></div>
           <div class="fp-row grand"><span>Total</span><span>₹<span id="fp_total">0</span></span></div>
-          <div class="fp-note">💵 Cash on Delivery — Delivery pe cash dena hoga</div>
         </div>
         <div class="order-id-row">Order ID: <strong id="rev_orderId"></strong></div>
       </div>
 
       <div class="nav-row">
         <button class="btn-back" onclick="goStep(2)">← Back</button>
-        <button class="btn-submit" id="btnSubmit" onclick="placeOrder()">✅ Order Place Karo</button>
+        <button class="btn-submit" id="btnSubmit" onclick="placeOrder()">✅ Place Order</button>
       </div>
     </div>
 
@@ -750,20 +744,19 @@ footer a { color: #888; text-decoration: none; }
         <div class="success-anim">✓</div>
         <h2>Order Placed! 🎉</h2>
         <div style="background:#fff8f0;border:2px dashed #e8440a;border-radius:12px;padding:14px 20px;margin:12px 0 16px;text-align:center">
-          <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;letter-spacing:0.5px">AAPKA ORDER ID — SAVE KAR LO</div>
+          <div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:600;letter-spacing:0.5px">YOUR ORDER ID — SAVE THIS</div>
           <div style="font-size:26px;font-weight:800;color:#e8440a;font-family:'Space Grotesk',sans-serif;letter-spacing:1px" id="suc_orderId"></div>
-          <div style="font-size:11px;color:#999;margin-top:4px">Is ID se order track kar sakte hain</div>
+          <div style="font-size:11px;color:#999;margin-top:4px">You can use this ID to track your order</div>
         </div>
-        <p style="color:#666;font-size:13px;margin-bottom:14px">Aapka order receive ho gaya hai.<br>Hum jald hi print karke bhej denge.</p>
+        <p style="color:#666;font-size:13px;margin-bottom:14px">Your order has been received.<br>We'll print it and ship it soon.</p>
         <div class="success-details">
           <div class="srow"><span>Total Amount</span><span>₹<span id="suc_total"></span></span></div>
-          <div class="srow"><span>Payment</span><span>Cash on Delivery</span></div>
           <div class="srow"><span>Expected Delivery</span><span id="suc_delivery"></span></div>
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
-          <button class="wa-btn" id="waBtn" onclick="sendWhatsApp()">📲 WhatsApp pe Order Share Karo</button>
-          <a id="trackBtn" href="track.html" style="display:block;text-align:center;padding:12px;background:#f5f3ef;border:1.5px solid #e4e1db;border-radius:10px;color:#3a3a3a;font-weight:700;font-size:14px;text-decoration:none">📦 Order Track Karo</a>
-          <button class="new-order-btn" onclick="resetApp()">+ Naya Order Dena Hai</button>
+          <button class="wa-btn" id="waBtn" onclick="sendWhatsApp()">📲 Share Order on WhatsApp</button>
+          <a id="trackBtn" href="track.html" style="display:block;text-align:center;padding:12px;background:#f5f3ef;border:1.5px solid #e4e1db;border-radius:10px;color:#3a3a3a;font-weight:700;font-size:14px;text-decoration:none">📦 Track Order</a>
+          <button class="new-order-btn" onclick="resetApp()">+ Place a New Order</button>
         </div>
       </div>
     </div>
@@ -772,18 +765,18 @@ footer a { color: #888; text-decoration: none; }
 
   <footer>
     <p>📍 Padrauna, Kushinagar, Uttar Pradesh &nbsp;|&nbsp; 📞 <a href="tel:8542843598">8542843598</a></p>
-    <p class="footer-sub">PrintKaro — Trusted Print Service • Ghar tak Delivery</p>
+    <p class="footer-sub">PrintKaro — Trusted Print Service • Delivered to Your Door</p>
   </footer>
 
 </div>
 
 <script>
 // ══════════════════════════════════════════
-//  PRICES — Firebase se aate hain (admin panel se manage karo)
+//  PRICES — loaded from Firebase (manage via admin panel)
 // ══════════════════════════════════════════
 let PRICES   = { bw: { A4: 2, A3: 4, Letter: 2, Legal: 3 }, color: { A4: 10, A3: 18, Letter: 10, Legal: 14 } };
 let SHIPPING = { standard: 40, express: 80 };
-let SHIPPING_DAYS = { standard: '3-5 din', express: '1-2 din' };
+let SHIPPING_DAYS = { standard: '3-5 days', express: '1-2 days' };
 let BINDING  = { none: 0, staple: 5, spiral: 30, hardcover: 80 };
 
 async function loadPricingFromFirebase() {
@@ -806,7 +799,7 @@ async function loadPricingFromFirebase() {
       BINDING.spiral    = d.binding.spiral    ?? BINDING.spiral;
       BINDING.hardcover = d.binding.hardcover ?? BINDING.hardcover;
     }
-    // UI update karo
+    // Update UI
     updatePriceButtons();
     updateShippingUI();
     updatePricePreview();
@@ -814,11 +807,12 @@ async function loadPricingFromFirebase() {
 }
 
 function updatePriceButtons() {
-  // Print type buttons
+  // Print type buttons — show per-page price for the currently selected paper size
+  const size = state.options.paperSize;
   const bwBtn  = document.querySelector('[data-group="printType"][data-val="bw"]');
   const colBtn = document.querySelector('[data-group="printType"][data-val="color"]');
-  if (bwBtn)  bwBtn.textContent  = '⬛ Black & White — ₹' + PRICES.bw.A4 + '/page';
-  if (colBtn) colBtn.textContent = '🌈 Colour — ₹' + PRICES.color.A4 + '/page';
+  if (bwBtn)  bwBtn.textContent  = '⬛ Black & White — ₹' + PRICES.bw[size] + '/page';
+  if (colBtn) colBtn.textContent = '🌈 Colour — ₹' + PRICES.color[size] + '/page';
   // Binding buttons
   const bindings = { staple: '📌 Staple', spiral: '🔘 Spiral', hardcover: '📚 Hardcover' };
   Object.entries(bindings).forEach(([key, label]) => {
@@ -834,7 +828,7 @@ function updateShippingUI() {
   if (expEl) expEl.innerHTML = `<strong>⚡ Express</strong><span>${SHIPPING_DAYS.express}</span><span class="ship-price">₹${SHIPPING.express}</span>`;
 }
 
-// COUPONS ab Firebase se aate hain — admin panel se manage karo
+// Coupons are now managed via Firebase (admin panel)
 
 let state = {
   step: 0, file: null, pageCount: 1,
@@ -885,17 +879,31 @@ function updateStepsBar() {
 }
 
 // ── File handling ──
-function handleFile(f) {
-  if (!f || f.type !== 'application/pdf') { alert('Sirf PDF files allowed hain!'); return; }
-  if (f.size > 50 * 1024 * 1024) { alert('File 50MB se badi hai!'); return; }
+async function handleFile(f) {
+  if (!f || f.type !== 'application/pdf') { alert('Only PDF files are allowed!'); return; }
+  if (f.size > 50 * 1024 * 1024) { alert('File is larger than 50MB!'); return; }
   state.file = f;
-  const pages = Math.max(1, Math.floor(f.size / 50000));
-  state.pageCount = pages;
   document.getElementById('fileName').textContent = f.name;
-  document.getElementById('fileMeta').textContent = (f.size/1024).toFixed(0) + ' KB • ~' + pages + ' pages (neeche adjust karo)';
+  document.getElementById('fileMeta').textContent = (f.size/1024).toFixed(0) + ' KB • detecting pages...';
   document.getElementById('dropPrompt').classList.add('hidden');
   document.getElementById('fileInfo').classList.remove('hidden');
   document.getElementById('dropzone').classList.add('has-file');
+  document.getElementById('pageCountRow').classList.add('hidden');
+  document.getElementById('btn0next').disabled = true;
+
+  let pages = 1;
+  try {
+    const arrayBuffer = await f.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    pages = pdf.numPages;
+  } catch(e) {
+    console.error('Page count detection error:', e);
+    alert('Could not read this PDF\'s page count. Please try a different file.');
+    pages = 1;
+  }
+
+  state.pageCount = pages;
+  document.getElementById('fileMeta').textContent = (f.size/1024).toFixed(0) + ' KB • ' + pages + ' page' + (pages > 1 ? 's' : '');
   document.getElementById('pageCountRow').classList.remove('hidden');
   document.getElementById('pageCountDisplay').textContent = pages;
   document.getElementById('btn0next').disabled = false;
@@ -917,17 +925,13 @@ function removeFile(e) {
   document.getElementById('btn0next').disabled = true;
   document.getElementById('fileInput').value = '';
 }
-function changePages(d) {
-  state.pageCount = Math.max(1, state.pageCount + d);
-  document.getElementById('pageCountDisplay').textContent = state.pageCount;
-  updatePricePreview();
-}
 
 // ── Options ──
 function selectOption(group, val, btn) {
   state.options[group] = val;
   document.querySelectorAll('[data-group="' + group + '"]').forEach(b => b.classList.remove('sel'));
   btn.classList.add('sel');
+  if (group === 'paperSize') updatePriceButtons();
   updatePricePreview();
 }
 function changeCopies(d) {
@@ -941,6 +945,8 @@ function updatePricePreview() {
   const pg = state.options.sides === 'double' ? Math.ceil(state.pageCount/2) : state.pageCount;
   document.getElementById('printCostLabel').textContent = 'Print (' + pg + 'pg × ' + state.options.copies + ')';
   document.getElementById('printCostVal').textContent = printCost;
+  const bindingLabels = { staple: 'Staple', spiral: 'Spiral', hardcover: 'Hardcover' };
+  document.getElementById('bindingLabel').textContent = bindingLabels[state.options.binding] || 'Binding';
   document.getElementById('bindingCostVal').textContent = bindingCost;
   document.getElementById('bindingRow').style.display = bindingCost > 0 ? '' : 'none';
   document.getElementById('subtotalVal').textContent = printCost + bindingCost;
@@ -960,7 +966,7 @@ function checkStep2() {
 
   if (phone.length > 0 && !phoneValid) {
     phoneEl.style.borderColor = '#ef4444';
-    if (phoneHint) { phoneHint.textContent = '❌ 10 digit ka mobile number daalo'; phoneHint.style.color = '#ef4444'; }
+    if (phoneHint) { phoneHint.textContent = '❌ Enter a valid 10 digit mobile number'; phoneHint.style.color = '#ef4444'; }
   } else {
     phoneEl.style.borderColor = '';
     if (phoneHint) { phoneHint.textContent = ''; }
@@ -977,7 +983,7 @@ async function applyCoupon() {
   const btn = document.querySelector('.coupon-btn');
   msgEl.style.display = 'block';
 
-  if (!code) { msgEl.textContent = 'Code likhein pehle'; msgEl.className = 'coupon-msg error'; return; }
+  if (!code) { msgEl.textContent = 'Please enter a code'; msgEl.className = 'coupon-msg error'; return; }
 
   // Loading state
   btn.textContent = '⏳...'; btn.disabled = true;
@@ -991,7 +997,7 @@ async function applyCoupon() {
     btn.textContent = 'Apply'; btn.disabled = false;
 
     if (snap.empty) {
-      msgEl.textContent = '❌ Galat code hai'; msgEl.className = 'coupon-msg error';
+      msgEl.textContent = '❌ Invalid code'; msgEl.className = 'coupon-msg error';
       populateReview(); return;
     }
 
@@ -999,20 +1005,20 @@ async function applyCoupon() {
 
     // Expiry check
     if (coupon.expiry && new Date(coupon.expiry) < new Date()) {
-      msgEl.textContent = '❌ Coupon expire ho gaya'; msgEl.className = 'coupon-msg error';
+      msgEl.textContent = '❌ This coupon has expired'; msgEl.className = 'coupon-msg error';
       populateReview(); return;
     }
 
     // Max uses check
     if (coupon.maxUses && coupon.maxUses > 0 && (coupon.usedCount || 0) >= coupon.maxUses) {
-      msgEl.textContent = '❌ Coupon limit khatam ho gayi'; msgEl.className = 'coupon-msg error';
+      msgEl.textContent = '❌ This coupon has reached its usage limit'; msgEl.className = 'coupon-msg error';
       populateReview(); return;
     }
 
     // Min order check
     const { subtotal } = calcPrice();
     if (subtotal < (coupon.minOrder || 0)) {
-      msgEl.textContent = '❌ Min order ₹' + coupon.minOrder + ' chahiye'; msgEl.className = 'coupon-msg error';
+      msgEl.textContent = '❌ Minimum order of ₹' + coupon.minOrder + ' required'; msgEl.className = 'coupon-msg error';
       populateReview(); return;
     }
 
@@ -1020,12 +1026,12 @@ async function applyCoupon() {
     state.coupon = code;
     state.couponData = coupon;
     const desc = coupon.type === 'percent' ? coupon.value + '% Off' : '₹' + coupon.value + ' Off';
-    msgEl.textContent = '✅ ' + desc + ' apply hua!'; msgEl.className = 'coupon-msg success';
+    msgEl.textContent = '✅ ' + desc + ' applied!'; msgEl.className = 'coupon-msg success';
     populateReview();
 
   } catch(e) {
     btn.textContent = 'Apply'; btn.disabled = false;
-    msgEl.textContent = '❌ Error aaya, dobara try karo'; msgEl.className = 'coupon-msg error';
+    msgEl.textContent = '❌ Something went wrong, please try again'; msgEl.className = 'coupon-msg error';
     console.error('Coupon check error:', e);
   }
 }
@@ -1049,6 +1055,7 @@ function populateReview() {
     (state.options.binding !== 'none' ? ' • ' + state.options.binding + ' binding' : '');
   document.getElementById('rev_delivery').innerHTML = sh.name + ' • ' + sh.phone + '<br>' + sh.address + ', ' + sh.city + ', ' + sh.state + ' - ' + sh.pincode;
   document.getElementById('fp_print').textContent = printCost;
+  document.getElementById('fp_binding_label').textContent = ({ staple: 'Staple', spiral: 'Spiral', hardcover: 'Hardcover' })[state.options.binding] || 'Binding';
   document.getElementById('fp_binding').textContent = bindingCost;
   document.getElementById('fp_binding_row').style.display = bindingCost > 0 ? '' : 'none';
   document.getElementById('fp_ship_label').textContent = 'Shipping (' + state.options.shipping + ')';
@@ -1069,11 +1076,11 @@ async function placeOrder() {
 
   const { printCost, shippingCost, bindingCost, discount, total } = calcPrice();
 
-  // ── Step 1: File upload karo Firebase Storage mein ──
+  // ── Step 1: Upload file to Firebase Storage ──
   let fileURL = null;
   if (state.file && window._storage) {
     try {
-      btn.textContent = '📤 File upload ho rahi hai...';
+      btn.textContent = '📤 Uploading file...';
       const { ref, uploadBytes, getDownloadURL } = window._fbFns;
       const filePath = 'printFiles/' + state.orderId + '_' + state.file.name;
       const storageRef = ref(window._storage, filePath);
@@ -1082,15 +1089,15 @@ async function placeOrder() {
     } catch(e) {
       console.error('File upload error:', e);
       btn.disabled = false;
-      btn.textContent = '✅ Order Place Karo';
+      btn.textContent = '✅ Place Order';
       state.saving = false;
-      alert('File upload nahi hui! Internet check karo aur dobara try karo.');
+      alert('File upload failed! Please check your internet connection and try again.');
       return;
     }
   }
 
-  // ── Step 2: Order Firestore mein save karo ──
-  btn.textContent = '⏳ Order save ho raha hai...';
+  // ── Step 2: Save order to Firestore ──
+  btn.textContent = '⏳ Saving order...';
   if (window._db) {
     try {
       const { collection, addDoc, serverTimestamp } = window._fbFns;
@@ -1109,20 +1116,20 @@ async function placeOrder() {
     } catch(e) {
       console.error('Firebase error:', e);
       btn.disabled = false;
-      btn.textContent = '✅ Order Place Karo';
+      btn.textContent = '✅ Place Order';
       state.saving = false;
-      alert('Error aaya! Internet check karo aur dobara try karo.');
+      alert('An error occurred! Please check your internet connection and try again.');
       return;
     }
   } else {
     btn.disabled = false;
-    btn.textContent = '✅ Order Place Karo';
+    btn.textContent = '✅ Place Order';
     state.saving = false;
-    alert('Firebase connect nahi hua! Admin se contact karo.');
+    alert('Could not connect to the database! Please contact admin.');
     return;
   }
 
-  // EmailJS — Admin ko email bhejo
+  // EmailJS — send notification email to admin
   try {
     const sh = state.shipping;
     await emailjs.send('service_hg0uyqv', 'template_x0zfsuu', {
@@ -1135,15 +1142,15 @@ async function placeOrder() {
       print_type: state.options.printType === 'bw' ? 'Black & White' : 'Colour',
       paper_size: state.options.paperSize,
       copies: state.options.copies,
-      shipping_type: state.options.shipping === 'express' ? '⚡ Express (1-2 din)' : 'Standard (3-5 din)',
+      shipping_type: state.options.shipping === 'express' ? '⚡ Express (1-2 days)' : 'Standard (3-5 days)',
       print_cost: printCost,
       shipping_cost: shippingCost,
       total_amount: total,
-      coupon: state.coupon ? state.coupon + ' (−₹' + discount + ')' : 'Koi coupon nahi',
+      coupon: state.coupon ? state.coupon + ' (−₹' + discount + ')' : 'No coupon applied',
     });
   } catch(e) {
-    console.warn('Email nahi gaya:', e);
-    // Email fail ho bhi to order place hota rahega
+    console.warn('Email could not be sent:', e);
+    // Order is still placed even if the email fails
   }
 
   // Success
@@ -1155,7 +1162,7 @@ async function placeOrder() {
   document.getElementById('suc_total').textContent = total;
   const deliveryDays = state.options.shipping === 'standard' ? SHIPPING_DAYS.standard : SHIPPING_DAYS.express;
   document.getElementById('suc_delivery').textContent = deliveryDays;
-  // Track button mein order ID add karo
+  // Add order ID to track button link
   document.getElementById('trackBtn').href = 'track.html?order=' + state.orderId;
   window.scrollTo(0, 0);
 }
@@ -1168,7 +1175,7 @@ function sendWhatsApp() {
   const msg =
     `🖨️ *PrintKaro — Order Confirmed!*\n\n` +
     `📋 *Order ID:* #${state.orderId}\n` +
-    `👤 *Naam:* ${sh.name}\n` +
+    `👤 *Name:* ${sh.name}\n` +
     `📍 *Address:* ${sh.address}, ${sh.city}, ${sh.state} — ${sh.pincode}\n\n` +
     `🖨️ *Print Details:*\n` +
     `• ${state.options.printType === 'bw' ? 'Black & White' : 'Colour'} • ${state.options.paperSize}\n` +
@@ -1176,9 +1183,9 @@ function sendWhatsApp() {
     `• ${state.options.sides === 'single' ? 'Single Side' : 'Double Side'} • ${state.options.binding !== 'none' ? state.options.binding + ' binding' : 'No binding'}\n` +
     `• Delivery: ${state.options.shipping === 'standard' ? 'Standard' : 'Express'} (${deliveryDays})\n\n` +
     (discount > 0 ? `🎟️ *Coupon:* ${state.coupon} (−₹${discount})\n` : '') +
-    `💰 *Total:* ₹${total} *(Cash on Delivery)*\n\n` +
+    `💰 *Total:* ₹${total}\n\n` +
     `📁 *File:* ${state.file?.name}\n\n` +
-    `🔍 Track karo: printkaro.in/track.html?order=${state.orderId}`;
+    `🔍 Track your order: printkaro.in/track.html?order=${state.orderId}`;
   window.open(`https://wa.me/918542843598?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -1208,6 +1215,7 @@ function resetApp() {
   window.scrollTo(0, 0);
 }
 
+updatePriceButtons();
 updatePricePreview();
 </script>
 </body>
